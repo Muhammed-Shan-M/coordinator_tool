@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { predefinedQuestionSets, predefinedPracticalQuestionSets } from "../util/predefined"
 import { useDispatch } from "react-redux"
 import type { AppDispach } from "@/redux/Store"
@@ -13,7 +12,8 @@ import { useNavigate } from "react-router-dom"
 import { validateQuestions, extractQustions } from "@/util/utility"
 import type { ReviewState } from "@/util/type"
 import { setReviewState } from "@/redux/slice/qustions"
-import { ChevronDown, ChevronUp, Check } from "lucide-react"
+import RenderPredefinedQuestionBox from "./utility/start-utility/renderPredefinedQuestionBox"
+import RenderCustomQuestionBox from "./utility/start-utility/renderCustomQuestionBox"
 
 // Week 4 specific question sets - you'll need to add these to your predefined.ts file
 const cBasicPatternSets = {
@@ -184,6 +184,7 @@ export default function ReviewSetup() {
 
   // State for Practical Questions
   const [practicalQuestionType, setPracticalQuestionType] = useState("predefined") // 'predefined' or 'custom'
+
   const [customPracticalQuestions, setCustomPracticalQuestions] = useState("")
   const [selectedPredefinedPracticalSet, setSelectedPredefinedPracticalSet] = useState("")
 
@@ -301,165 +302,7 @@ export default function ReviewSetup() {
     navigate("/review")
   }
 
-  const renderSets = (
-    sets: any[],
-    selectedSet: string,
-    setSelectedSet: (value: string) => void,
-    expandedSet: string,
-    type: string,
-    category?: string,
-  ) => (
-    <div className="max-h-96 overflow-y-auto space-y-4">
-      {sets.map((set) => (
-        <div key={set.id} className="border border-[#333333] rounded-lg">
-          <div
-            className={`flex items-center justify-between p-4 cursor-pointer transition-colors ${
-              selectedSet === set.id ? "bg-[#444444] border-[#555555]" : "hover:bg-[#333333]"
-            }`}
-            onClick={() => {
-              setSelectedSet(set.id)
-              toggleSetExpansion(set.id, type, category)
-            }}
-          >
-            <div className="flex items-center gap-3">
-              {selectedSet === set.id && <Check className="h-5 w-5 text-green-400" />}
-              <span className="text-gray-200 font-medium">{set.name}</span>
-            </div>
-            {expandedSet === set.id ? (
-              <ChevronUp className="h-5 w-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-gray-400" />
-            )}
-          </div>
 
-          {expandedSet === set.id && (
-            <div className="border-t border-[#333333] p-4 bg-[#222222]">
-              <div className="space-y-2">
-                {set.questions.map((question: string, index: number) => (
-                  <div key={index} className="text-gray-300 text-sm">
-                    {index + 1}. {question}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-
-  const renderPredefinedQuestionBox = (
-    title: string,
-    activeTab: string,
-    setActiveTab: (tab: string) => void,
-    theorySets: any[],
-    practicalSets: any[],
-    selectedTheorySet: string,
-    setSelectedTheorySet: (value: string) => void,
-    selectedPracticalSet: string,
-    setSelectedPracticalSet: (value: string) => void,
-    expandedTheorySet: string,
-    expandedPracticalSet: string,
-    category?: string,
-  ) => (
-    <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">{title}</h2>
-
-      {/* Filtration Tabs */}
-      <div className="flex gap-0 mb-6 border border-[#333333] rounded-md overflow-hidden">
-        <Button
-          onClick={() => setActiveTab("theory")}
-          className={`flex-1 rounded-none px-6 py-2 text-sm font-medium transition-colors duration-200 ${
-            activeTab === "theory" ? "bg-[#444444] text-gray-50" : "bg-[#222222] text-gray-400 hover:bg-[#333333]"
-          }`}
-        >
-          THEORY
-        </Button>
-        <Button
-          onClick={() => setActiveTab("practical")}
-          className={`flex-1 rounded-none px-6 py-2 text-sm font-medium transition-colors duration-200 ${
-            activeTab === "practical" ? "bg-[#444444] text-gray-50" : "bg-[#222222] text-gray-400 hover:bg-[#333333]"
-          }`}
-        >
-          PRACTICAL
-        </Button>
-      </div>
-
-      {/* Sets */}
-      {activeTab === "theory"
-        ? renderSets(theorySets, selectedTheorySet, setSelectedTheorySet, expandedTheorySet, "theory", category)
-        : renderSets(
-            practicalSets,
-            selectedPracticalSet,
-            setSelectedPracticalSet,
-            expandedPracticalSet,
-            "practical",
-            category,
-          )}
-    </div>
-  )
-
-  const renderCustomQuestionBox = (
-    title: string,
-    activeTab: string,
-    setActiveTab: (tab: string) => void,
-    theoryValue: string,
-    setTheoryValue: (value: string) => void,
-    practicalValue: string,
-    setPracticalValue: (value: string) => void,
-  ) => (
-    <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">{title}</h2>
-
-      {/* Filtration Tabs */}
-      <div className="flex gap-0 mb-6 border border-[#333333] rounded-md overflow-hidden">
-        <Button
-          onClick={() => setActiveTab("theory")}
-          className={`flex-1 rounded-none px-6 py-2 text-sm font-medium transition-colors duration-200 ${
-            activeTab === "theory" ? "bg-[#444444] text-gray-50" : "bg-[#222222] text-gray-400 hover:bg-[#333333]"
-          }`}
-        >
-          THEORY
-        </Button>
-        <Button
-          onClick={() => setActiveTab("practical")}
-          className={`flex-1 rounded-none px-6 py-2 text-sm font-medium transition-colors duration-200 ${
-            activeTab === "practical" ? "bg-[#444444] text-gray-50" : "bg-[#222222] text-gray-400 hover:bg-[#333333]"
-          }`}
-        >
-          PRACTICAL
-        </Button>
-      </div>
-
-      {/* Text Area */}
-      <div className="space-y-2">
-        <Label className="text-gray-200">
-          Paste Custom {activeTab === "theory" ? "Theory" : "Practical"} Questions
-        </Label>
-        <Textarea
-          placeholder="Paste your questions here, separated with numbers (e.g., 1. Question One) or bullet points (e.g., - Question Two)."
-          className="h-32 bg-[#222222] border-[#333333] text-gray-200 placeholder:text-gray-500 focus:ring-offset-[#1A1A1A] resize-none"
-          value={activeTab === "theory" ? theoryValue : practicalValue}
-          onChange={(e) => {
-            if (activeTab === "theory") {
-              setTheoryValue(e.target.value)
-            } else {
-              setPracticalValue(e.target.value)
-            }
-          }}
-        />
-        <p className="text-sm text-gray-400">
-          {activeTab === "theory"
-            ? theoryError
-              ? theoryError
-              : "Paste the questions separated with numbers (e.g., 1. Question One) or bullet points (e.g., - Question Two)."
-            : practicalError
-              ? practicalError
-              : "Paste the questions separated with numbers (e.g., 1. Question One) or bullet points (e.g., - Question Two)."}
-        </p>
-      </div>
-    </div>
-  )
 
   const isStartReviewDisabled = !studentName || !selectedWeek
 
@@ -531,29 +374,35 @@ export default function ReviewSetup() {
       {/* Question Selection Section for Weeks 1-3 */}
       {selectedWeek && selectedWeek !== "week-4" && (
         <div className="w-full mb-6">
-          {questionMode === "custom"
-            ? renderCustomQuestionBox(
-                "Select Question",
-                activeCustomTab,
-                setActiveCustomTab,
-                customTheoryQuestions,
-                setCustomTheoryQuestions,
-                customPracticalQuestions,
-                setCustomPracticalQuestions,
-              )
-            : renderPredefinedQuestionBox(
-                "Select Question",
-                activePredefinedTab,
-                setActivePredefinedTab,
-                predefinedQuestionSets,
-                predefinedPracticalQuestionSets,
-                selectedPredefinedTheorySet,
-                setSelectedPredefinedTheorySet,
-                selectedPredefinedPracticalSet,
-                setSelectedPredefinedPracticalSet,
-                expandedTheorySet,
-                expandedPracticalSet,
-              )}
+          {questionMode === "custom" ? (
+            < RenderCustomQuestionBox
+              title={"Select Question"}
+              activeTab={activeCustomTab}
+              setActiveTab={setActiveCustomTab}
+              theoryValue={customTheoryQuestions}
+              setTheoryValue={setCustomTheoryQuestions}
+              practicalValue={customPracticalQuestions}
+              setPracticalValue={setCustomPracticalQuestions}
+              theoryError={theoryError}
+              practicalError={practicalError}
+            />
+
+          ) : (
+            <RenderPredefinedQuestionBox
+              title="Select Question"
+              activeTab={activePredefinedTab}
+              setActiveTab={setActivePredefinedTab}
+              theorySets={predefinedQuestionSets}
+              practicalSets={predefinedPracticalQuestionSets}
+              selectedTheorySet={selectedPredefinedTheorySet}
+              setSelectedTheorySet={setSelectedPredefinedTheorySet}
+              selectedPracticalSet={selectedPredefinedPracticalSet}
+              setSelectedPracticalSet={setSelectedPredefinedPracticalSet}
+              expandedTheorySet={expandedTheorySet}
+              expandedPracticalSet={expandedPracticalSet}
+              toggleSetExpansion={toggleSetExpansion}
+            />
+          )}
         </div>
       )}
 
@@ -562,78 +411,93 @@ export default function ReviewSetup() {
         <div className="space-y-6 w-full mb-6">
           {questionMode === "custom" ? (
             <>
-              {renderCustomQuestionBox(
-                "C Basic Patterns",
-                activeCBasicTab,
-                setActiveCBasicTab,
-                customCBasicTheoryQuestions,
-                setCustomCBasicTheoryQuestions,
-                customCBasicPracticalQuestions,
-                setCustomCBasicPracticalQuestions,
-              )}
-              {renderCustomQuestionBox(
-                "C Logical Array",
-                activeCLogicalTab,
-                setActiveCLogicalTab,
-                customCLogicalTheoryQuestions,
-                setCustomCLogicalTheoryQuestions,
-                customCLogicalPracticalQuestions,
-                setCustomCLogicalPracticalQuestions,
-              )}
-              {renderCustomQuestionBox(
-                "Java OOPs",
-                activeJavaTab,
-                setActiveJavaTab,
-                customJavaTheoryQuestions,
-                setCustomJavaTheoryQuestions,
-                customJavaPracticalQuestions,
-                setCustomJavaPracticalQuestions,
-              )}
+              <RenderCustomQuestionBox
+                title={"C Basic Patterns"}
+                activeTab={activeCBasicTab}
+                setActiveTab={setActiveCBasicTab}
+                theoryValue={customCBasicTheoryQuestions}
+                setTheoryValue={setCustomCBasicTheoryQuestions}
+                practicalValue={customCBasicPracticalQuestions}
+                setPracticalValue={setCustomCBasicPracticalQuestions}
+                theoryError={theoryError}
+                practicalError={practicalError}
+              />
+
+              <RenderCustomQuestionBox
+                title={"C Logical Array"}
+                activeTab={activeCLogicalTab}
+                setActiveTab={setActiveCLogicalTab}
+                theoryValue={customCLogicalTheoryQuestions}
+                setTheoryValue={setCustomCLogicalTheoryQuestions}
+                practicalValue={customCLogicalPracticalQuestions}
+                setPracticalValue={setCustomCLogicalPracticalQuestions}
+                theoryError={theoryError}
+                practicalError={practicalError}
+              />
+
+
+              <RenderCustomQuestionBox
+                title={"Java OOPs"}
+                activeTab={activeJavaTab}
+                setActiveTab={setActiveJavaTab}
+                theoryValue={customJavaTheoryQuestions}
+                setTheoryValue={setCustomJavaTheoryQuestions}
+                practicalValue={customJavaPracticalQuestions}
+                setPracticalValue={setCustomJavaPracticalQuestions}
+                theoryError={theoryError}
+                practicalError={practicalError}
+              />
+
             </>
           ) : (
             <>
-              {renderPredefinedQuestionBox(
-                "C Basic Patterns",
-                activeCBasicTab,
-                setActiveCBasicTab,
-                cBasicPatternSets.theory,
-                cBasicPatternSets.practical,
-                selectedCBasicTheorySet,
-                setSelectedCBasicTheorySet,
-                selectedCBasicPracticalSet,
-                setSelectedCBasicPracticalSet,
-                expandedCBasicTheorySet,
-                expandedCBasicPracticalSet,
-                "c-basic",
-              )}
-              {renderPredefinedQuestionBox(
-                "C Logical Array",
-                activeCLogicalTab,
-                setActiveCLogicalTab,
-                cLogicalArraySets.theory,
-                cLogicalArraySets.practical,
-                selectedCLogicalTheorySet,
-                setSelectedCLogicalTheorySet,
-                selectedCLogicalPracticalSet,
-                setSelectedCLogicalPracticalSet,
-                expandedCLogicalTheorySet,
-                expandedCLogicalPracticalSet,
-                "c-logical",
-              )}
-              {renderPredefinedQuestionBox(
-                "Java OOPs",
-                activeJavaTab,
-                setActiveJavaTab,
-                javaSets.theory,
-                javaSets.practical,
-                selectedJavaTheorySet,
-                setSelectedJavaTheorySet,
-                selectedJavaPracticalSet,
-                setSelectedJavaPracticalSet,
-                expandedJavaTheorySet,
-                expandedJavaPracticalSet,
-                "java",
-              )}
+              <RenderPredefinedQuestionBox
+                title={"C Basic Patterns"}
+                activeTab={activeCBasicTab}
+                setActiveTab={setActiveCBasicTab}
+                theorySets={cBasicPatternSets.theory}
+                practicalSets={cBasicPatternSets.practical}
+                selectedTheorySet={selectedCBasicTheorySet}
+                setSelectedTheorySet={setSelectedCBasicTheorySet}
+                selectedPracticalSet={selectedCBasicPracticalSet}
+                setSelectedPracticalSet={setSelectedCBasicPracticalSet}
+                expandedTheorySet={expandedCBasicTheorySet}
+                expandedPracticalSet={expandedCBasicPracticalSet}
+                toggleSetExpansion={toggleSetExpansion}
+                category={'c-basic'}
+              />
+
+              <RenderPredefinedQuestionBox
+                title={"C Logical Array"}
+                activeTab={activeCLogicalTab}
+                setActiveTab={setActiveCLogicalTab}
+                theorySets={cLogicalArraySets.theory}
+                practicalSets={cLogicalArraySets.practical}
+                selectedTheorySet={selectedCLogicalTheorySet}
+                setSelectedTheorySet={setSelectedCLogicalTheorySet}
+                selectedPracticalSet={selectedCLogicalPracticalSet}
+                setSelectedPracticalSet={setSelectedCLogicalPracticalSet}
+                expandedTheorySet={expandedCLogicalTheorySet}
+                expandedPracticalSet={expandedCLogicalPracticalSet}
+                toggleSetExpansion={toggleSetExpansion}
+                category={"c-logical"}
+              />
+
+              <RenderPredefinedQuestionBox
+                title={"Java OOPs"}
+                activeTab={activeJavaTab}
+                setActiveTab={setActiveJavaTab}
+                theorySets={javaSets.theory}
+                practicalSets={javaSets.practical}
+                selectedTheorySet={selectedJavaTheorySet}
+                setSelectedTheorySet={setSelectedJavaTheorySet}
+                selectedPracticalSet={selectedJavaPracticalSet}
+                setSelectedPracticalSet={setSelectedJavaPracticalSet}
+                expandedTheorySet={expandedJavaTheorySet}
+                expandedPracticalSet={expandedJavaPracticalSet}
+                toggleSetExpansion={toggleSetExpansion}
+                category={"java"}
+              />
             </>
           )}
         </div>

@@ -103,6 +103,9 @@ export const findTotalRating = (mark: number) => {
 }
 
 
+
+
+
 // 1) What is JavaScript? @Explain its use in web development!
 // 2) How does the event 6 loop work in JS? #Important for async code.
 // 3) What are closures? -> Used in - functional programming...
