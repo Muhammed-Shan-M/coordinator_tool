@@ -1,6 +1,16 @@
-import { Question } from './type'
+import { PayloadAction } from '@reduxjs/toolkit';
+import { CommenPayload, Question, ReviewState, SetAnsweredPayload, CompilationWeekPayload, CompilationCommenWeekPayload, UpdateType, BasePayload, CompilationWeekQuestions, Week4Marks, WeekName,NormalWeekMarks, FirestorePreset, Presets, QuestionSet } from './type'
 
-export async function extractQustions(input: string) {
+
+
+
+export async function extractQustions(input: string, isPresets: boolean, allQustions: QuestionSet[]) {
+
+  if(isPresets){
+    const questions = allQustions.find((item) => item.id === input)?.questions.map((item,ind) => ({id:ind + 1, text:item})) ?? []
+    return questions
+  }
+
   const cleanedInput = input.replace(/\n\s*\n/g, '\n').trim();
 
   // Split by lines starting with "number.", "number)", or "-"
@@ -22,21 +32,27 @@ export async function extractQustions(input: string) {
 }
 
 
-export const validateQuestions = (text: string) => {
-  // Remove leading/trailing whitespace and empty lines
+export const validateQuestions = (text: string, isPresets: boolean) => {
+
   const lines = text.trim().split('\n').filter(line => line.trim() !== '');
 
+  if(lines.length === 0 && isPresets){
 
-  if (lines.length === 0) {
+    return 'Please select a question from the available list of sets before proceeding.'
+
+  }else if (lines.length === 0) {
+
     return 'Please enter at least one question';
+    
   }
 
-  // Patterns for different separators
+  if(isPresets)return ""
+
+
   const numberParenPattern = /^\d+\)\s*.+/ // (1) Question
   const numberDotPattern = /^\d+\.\s*.+/; // 1. Question
   const hyphenPattern = /^-\s*.+/; // - Question
 
-  // Determine the format of the first non-empty line
   let format = null;
   if (numberParenPattern.test(lines[0])) {
     format = 'numberParen';
@@ -48,7 +64,7 @@ export const validateQuestions = (text: string) => {
     return 'Questions must start with (1), 1., or - followed by a space';
   }
 
-  // Validate all lines follow the same format
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (format === 'numberParen' && !numberParenPattern.test(line)) {
@@ -59,7 +75,7 @@ export const validateQuestions = (text: string) => {
       return `Line ${i + 1} does not match hyphen (-) format`;
     }
 
-    // Additional validation for number formats
+
     if (format === 'numberParen') {
       const match = line.match(/^\((\d+)\)/);
       if (match && parseInt(match[1]) !== i + 1) {
@@ -77,46 +93,212 @@ export const validateQuestions = (text: string) => {
 };
 
 
-export const findTotalMark = (questions: Question[]) => {
-  let totalMark = 0
-  for (let q of questions) {
-    let mark = 0
-    if (q.performance === 1) {
-      mark = 5
-    } else if (q.performance === 2) {
-      mark = 7
-    } else if (q.performance === 3) {
-      mark = 10
-    }
+export const findTotalMark = (questions: Question[], totalQuestion: number) => {
 
-    totalMark += mark
-  }
+  const halfThreShould = Math.ceil(totalQuestion / 2)
+  const answerdCount = questions.length
 
-  return parseFloat((totalMark / questions.length).toFixed(1))
+
+  if (answerdCount === 0) return 0
+
+  const avgStar = questions.reduce((sum, q) => sum + (q.performance ? q.performance : 0), 0) / answerdCount
+
+  const perfFraction = (avgStar - 1) / 2
+
+  const bonus = perfFraction * 5 * (answerdCount / totalQuestion)
+
+
+  let finalMark = parseInt((answerdCount >= halfThreShould ? 5 + bonus : bonus).toFixed(2))
+  console.log('question : ', questions, ' totalQuestion : ', totalQuestion, 'halThereShould : ', halfThreShould, "answereCount : ", answerdCount, 'avgStar : ', avgStar, 'perfFraction', perfFraction, 'bonus : ', bonus, 'finalMark : ', finalMark)
+
+  return Math.min(finalMark, 10)
+
 }
 
 
 export const findTotalRating = (mark: number) => {
-  if(mark >= 5 && mark < 7)return 1
-  else if(mark >= 7 && mark < 10)return 2
+  if (mark >= 5 && mark < 7) return 1
+  else if (mark >= 7 && mark < 10) return 2
   else return 3
 }
 
 
 
+const updateQuestion = (list: Question[], id: number, performance: number | null, updateType: UpdateType) => {
+  const q = list.find(Item => Item.id === id)
 
 
-// 1) What is JavaScript? @Explain its use in web development!
-// 2) How does the event 6 loop work in JS? #Important for async code.
-// 3) What are closures? -> Used in - functional programming...
-// 4) Explain "this" keyword in JavaScript; show with example.
-// 5) What is the difference between var, let, and const? _Key to block scope.
+  if (q && updateType === 'answered') {
+    q.answered = true
+    q.notanswered = false
+    q.performance = performance
+  } else if (q && updateType === 'not-answered') {
+    q.answered = false
+    q.notanswered = true
+    q.performance = null
+  } else if (q && updateType === 'remove-answered') {
+    q.answered = false
+    q.performance = null
+  } else if (q && updateType === 'remove-notanswered') {
+    q.notanswered = false
+  }
 
-// 1) Find the Second Largest Element in an Array
-// 2) Reverse an Array In-Place
-// 3) Count Frequency of Each Element in the Array
+}
 
-// 1) Abstraction – Abstract Class Implementation
-// 2) Inheritance – Method Access in Subclass
-// 3) Polymorphism – Method Overriding
+
+const getQuestionList = (state: ReviewState, action: PayloadAction<CommenPayload | SetAnsweredPayload>, questionType: "practical" | "theory"): Question[] => {
+  if ("practical" in state.questions) {
+    return state.questions[questionType] as Question[]
+  } else {
+    const { weekName } = action.payload as CompilationWeekPayload | CompilationCommenWeekPayload
+    return state.questions[weekName][questionType] as Question[]
+  }
+}
+
+
+export function handleUpdate(state: ReviewState, action: PayloadAction<SetAnsweredPayload | CommenPayload>, updateType: UpdateType, performance: number | null) {
+
+  const { id, questionType } = action.payload as BasePayload
+
+  const list = getQuestionList(state, action, questionType)
+
+  updateQuestion(list, id, performance ?? 0, updateType)
+}
+
+export function getWeek4ClipboardText(
+  week4Marks: Week4Marks,
+  week4Questions: CompilationWeekQuestions,
+  feedbackText?: string
+): string {
+  // Map week keys to custom names
+  const weekNameMap: Record<string, string> = {
+    'week-1': 'C Basic Pattern',
+    'week-2': 'C Logic Array',
+    'week-3': 'Java OOPs',
+  };
+
+
+
+  return Object.entries(week4Questions)
+    .map(([weekKey, weekQuestions]) => {
+      const weekName = weekNameMap[weekKey] || weekKey;
+
+      // Practical questions
+      const practicalQs = weekQuestions.practical.map((q) => `   - ${q.text}`).join('\n');
+      console.log('prac', practicalQs)
+
+      // Theory questions
+      const theoryQs = weekQuestions.theory.map((q) => `   - ${q.text}`).join('\n');
+      console.log("the", theoryQs)
+
+      // Marks
+      console.log("mark", week4Marks, weekName)
+      const marks = `P : ${week4Marks[weekKey as keyof typeof week4Marks].P}\nT : ${week4Marks[weekKey as keyof typeof week4Marks].T}`;
+
+      return `${weekName}\npractical :\n${practicalQs}\ntheory :\n${theoryQs}\n\n${marks}`;
+    })
+    .join('\n\n') + (feedbackText ? `\n\nFeedback: ${feedbackText}` : '');
+}
+
+
+
+export function findMarks(reviewState: ReviewState, isWeek4: boolean): Week4Marks | NormalWeekMarks {
+  if (isWeek4) {
+    const weeks: WeekName[] = ["week-1", "week-2", "week-3"]
+
+    const marks = weeks.reduce((acc, week) => {
+      const practical = findAnsweredQuestions(isWeek4, reviewState, week, "practical")
+      const theory = findAnsweredQuestions(isWeek4, reviewState, week, "theory")
+
+      acc[week] = {
+        P: findTotalMark(practical.questions, practical.totalQuestions).toString(),
+        T: findTotalMark(theory.questions, theory.totalQuestions).toString(),
+      }
+      return acc
+    }, {} as Week4Marks)
+
+    return marks
+  } else {
+    const practical = findAnsweredQuestions(isWeek4, reviewState, "" as WeekName, "practical")
+    const theory = findAnsweredQuestions(isWeek4, reviewState, "" as WeekName, "theory")
+
+    const marks: NormalWeekMarks = {
+      P: findTotalMark(practical.questions, practical.totalQuestions).toString(),
+      T: findTotalMark(theory.questions, theory.totalQuestions).toString(),
+    }
+
+    return marks
+  }
+}
+
+
+
+
+export function findAnsweredQuestions(isWeek4: boolean, reviewState: ReviewState, selectedSegment: WeekName | '', questionType: "theory" | "practical") {
+  if (isWeek4) {
+    const compilationWeek = reviewState.questions as CompilationWeekQuestions
+    return {
+      questions: compilationWeek[selectedSegment][questionType].filter((q) => q.answered),
+      totalQuestions: compilationWeek[selectedSegment][questionType].length
+    }
+  } else {
+    const normalWeek = reviewState.questions[questionType] as Question[]
+    return {
+      questions: normalWeek.filter((q) => q.answered),
+      totalQuestions: normalWeek.length
+    }
+  }
+}
+
+// for conver firebase data to presets type
+
+// export const convertFirestorePresets = (docs: FirestorePreset[]): Presets => {
+//   return {
+//     theory: docs.flatMap((doc) =>
+//       doc.theoryQuestions.map((q, i) => ({
+//         id: `${doc.id}-theory-${i}`,
+//         question: q,
+//       }))
+//     ),
+//     practical: docs.flatMap((doc) =>
+//       doc.practicalQuestions.map((q, i) => ({
+//         id: `${doc.id}-practical-${i}`,
+//         question: q,
+//       }))
+//     ),
+//   }
+// }
+export const convertFirestorePresets = (docs: FirestorePreset[]): Presets => {
+  return {
+    theory: docs.reduce((acc, doc, i) => {
+      if (doc.theoryQuestions.length > 0) {
+        acc.push({
+          id: `${doc.id}-theory-${i + 1}`,
+          name: `Set ${i + 1}`,
+          questions: doc.theoryQuestions,
+        })
+      }
+      return acc
+    }, [] as { id: string; name: string; questions: any[] }[]),
+    
+    practical: docs.reduce((acc, doc, i) => {
+      if (doc.practicalQuestions.length > 0) {
+        acc.push({
+          id: `${doc.id}-practical-${i + 1}`,
+          name: `Set ${i + 1}`,
+          questions: doc.practicalQuestions,
+        })
+      }
+      return acc
+    }, [] as { id: string; name: string; questions: any[] }[]),
+  }
+}
+
+
+
+
+
+
+
+
 

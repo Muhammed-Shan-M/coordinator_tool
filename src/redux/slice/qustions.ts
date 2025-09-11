@@ -1,14 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { PayloadAction } from "@reduxjs/toolkit"
-import { SetAnsweredPayload,CommenPayload } from "./../../util/type";
-
-import { ReviewState } from "./../../util/type";
+import { SetAnsweredPayload, CommenPayload, Question } from "./../../util/type";
+import { handleUpdate } from "@/util/utility";
+import { ReviewState,CompilationWeekPayload, CompilationCommenWeekPayload} from "./../../util/type";
 
 const initialState: ReviewState = {
     studentName: '',
     selectedWeek: '',
-    practicalQuestion: [],
-    theoryQuestion: [],
+    questions: { practical: [], theory: [] }
 }
 
 const reviewSlice = createSlice({
@@ -20,66 +19,24 @@ const reviewSlice = createSlice({
         },
         resetReviewState: () => initialState,
         setAnswered: (state, action: PayloadAction<SetAnsweredPayload>) => {
-            const { id, performance, qustionType } = action.payload
+ 
+           handleUpdate(state, action, "answered", action.payload.performance)
 
-            let qusiton
-            if(qustionType === 'theory'){
-                qusiton = state.theoryQuestion.find(item => item.id === id)
-            }else{
-                qusiton = state.practicalQuestion.find(item => item.id === id)
-            }
-
-
-            if (qusiton) {
-                qusiton.answered = true
-                qusiton.notanswered = false
-                qusiton.performance = performance
-            }
         },
         setNotAnswered: (state, action: PayloadAction<CommenPayload>) => {
-            const {id,qustionType} = action.payload
 
-            let question
-            if(qustionType === 'theory'){
-                question = state.theoryQuestion.find(item => item.id === id)
-            }else{
-                question = state.practicalQuestion.find(item => item.id === id)
-            }
+           handleUpdate(state, action, "not-answered", null)
 
-            if (question) {
-                question.notanswered = true
-                question.answered = false
-                question.performance = null
-            }
         },
         removeAnswered: (state, action: PayloadAction<CommenPayload>) => {
-            const {id,qustionType} = action.payload
 
-            let question
-            if(qustionType === 'theory'){
-                question = state.theoryQuestion.find(item => item.id === id)
-            }else{
-                question = state.practicalQuestion.find(item => item.id === id)
-            }
+             handleUpdate(state, action, "remove-answered", null)
 
-            if (question) {
-                question.answered = false
-                question.performance = null
-            }
         },
         removeNotAnswered: (state, action: PayloadAction<CommenPayload>) => {
-            const {id,qustionType} = action.payload
+            
+            handleUpdate(state, action, "remove-notanswered", null)
 
-            let question
-            if(qustionType === 'theory'){
-                question = state.theoryQuestion.find(item => item.id === id)
-            }else{
-                question = state.practicalQuestion.find(item => item.id === id)
-            }
-
-            if (question) {
-                question.notanswered = false
-            }
         }
     }
 })

@@ -34,6 +34,8 @@ export default function RenderPredefinedQuestionBox({
   toggleSetExpansion,
   category,
 }: RenderPredefinedQuestionBoxProps) {
+  
+
   return (
     <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
       <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">{title}</h2>

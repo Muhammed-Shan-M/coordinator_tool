@@ -1,192 +1,57 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { predefinedQuestionSets, predefinedPracticalQuestionSets } from "../util/predefined"
+// import { predefinedQuestionSets, predefinedPracticalQuestionSets } from "../util/predefined"
 import { useDispatch } from "react-redux"
 import type { AppDispach } from "@/redux/Store"
 import { useNavigate } from "react-router-dom"
-import { validateQuestions, extractQustions } from "@/util/utility"
-import type { ReviewState } from "@/util/type"
+import { validateQuestions, extractQustions, convertFirestorePresets } from "@/util/utility"
+import type { ReviewState, Errors, Presets, QuestionSet, PresetsByWeek } from "@/util/type"
 import { setReviewState } from "@/redux/slice/qustions"
 import RenderPredefinedQuestionBox from "./utility/start-utility/renderPredefinedQuestionBox"
 import RenderCustomQuestionBox from "./utility/start-utility/renderCustomQuestionBox"
+import { addItem, getPresets } from "@/firebase/firebaseService"
+import { toast } from "react-toastify"
 
-// Week 4 specific question sets - you'll need to add these to your predefined.ts file
-const cBasicPatternSets = {
-  theory: [
-    {
-      id: "c-basic-theory-1",
-      name: "Set 1",
-      questions: [
-        "What is a pattern in C programming?",
-        "Explain nested loops in pattern printing.",
-        "What are the types of triangle patterns?",
-        "How do you create a diamond pattern logic?",
-        "What is the difference between right and left triangle patterns?",
-      ],
-    },
-    {
-      id: "c-basic-theory-2",
-      name: "Set 2",
-      questions: [
-        "Explain the logic behind pyramid patterns.",
-        "What are hollow patterns in C?",
-        "How do you print inverted patterns?",
-        "What is the role of spaces in pattern printing?",
-        "Explain the concept of symmetrical patterns.",
-      ],
-    },
-  ],
-  practical: [
-    {
-      id: "c-basic-practical-1",
-      name: "Set 1",
-      questions: [
-        "Write a C program to print a right triangle pattern using stars.",
-        "Create a program to print number pyramid pattern.",
-        "Implement a program to print diamond pattern.",
-        "Write a program to print Pascal's triangle.",
-        "Create a program to print inverted triangle pattern.",
-      ],
-    },
-    {
-      id: "c-basic-practical-2",
-      name: "Set 2",
-      questions: [
-        "Write a C program to print hollow square pattern.",
-        "Create a program to print alphabet pattern.",
-        "Implement a program to print spiral pattern.",
-        "Write a program to print zigzag pattern.",
-        "Create a program to print butterfly pattern.",
-      ],
-    },
-  ],
-}
 
-const cLogicalArraySets = {
-  theory: [
-    {
-      id: "c-logical-theory-1",
-      name: "Set 1",
-      questions: [
-        "What is an array in C programming?",
-        "Explain array indexing and bounds.",
-        "What are the advantages of using arrays?",
-        "How do you traverse an array?",
-        "What is the difference between 1D and 2D arrays?",
-      ],
-    },
-    {
-      id: "c-logical-theory-2",
-      name: "Set 2",
-      questions: [
-        "Explain array initialization methods.",
-        "What are dynamic arrays?",
-        "How do you pass arrays to functions?",
-        "What is array decay in C?",
-        "Explain multidimensional arrays.",
-      ],
-    },
-  ],
-  practical: [
-    {
-      id: "c-logical-practical-1",
-      name: "Set 1",
-      questions: [
-        "Write a C program to find second largest element in array.",
-        "Create a program to rotate array elements.",
-        "Implement a program to find duplicate elements.",
-        "Write a program to merge two arrays.",
-        "Create a program to find missing number in array.",
-      ],
-    },
-    {
-      id: "c-logical-practical-2",
-      name: "Set 2",
-      questions: [
-        "Write a C program to sort array in ascending order.",
-        "Create a program to find intersection of two arrays.",
-        "Implement a program to remove duplicates from array.",
-        "Write a program to find majority element.",
-        "Create a program to rearrange positive and negative numbers.",
-      ],
-    },
-  ],
-}
-
-const javaSets = {
-  theory: [
-    {
-      id: "java-theory-1",
-      name: "Set 1",
-      questions: [
-        "What is Object-Oriented Programming?",
-        "Explain the four pillars of OOP.",
-        "What is inheritance in Java?",
-        "Define polymorphism and its types.",
-        "What is encapsulation and data hiding?",
-      ],
-    },
-    {
-      id: "java-theory-2",
-      name: "Set 2",
-      questions: [
-        "What is abstraction in Java?",
-        "Explain method overloading and overriding.",
-        "What are interfaces and abstract classes?",
-        "Define constructors and their types.",
-        "What is the difference between class and object?",
-      ],
-    },
-  ],
-  practical: [
-    {
-      id: "java-practical-1",
-      name: "Set 1",
-      questions: [
-        "Write a Java program to implement inheritance.",
-        "Create a program to demonstrate method overloading.",
-        "Implement a program using interfaces.",
-        "Write a program to handle exceptions.",
-        "Create a program using collections framework.",
-      ],
-    },
-    {
-      id: "java-practical-2",
-      name: "Set 2",
-      questions: [
-        "Write a Java program to implement polymorphism.",
-        "Create a program using abstract classes.",
-        "Implement a program with multithreading.",
-        "Write a program to work with files.",
-        "Create a program using lambda expressions.",
-      ],
-    },
-  ],
-}
 
 export default function ReviewSetup() {
   const dispatch = useDispatch<AppDispach>()
   const navigate = useNavigate()
 
+
   const [studentName, setStudentName] = useState("")
   const [selectedWeek, setSelectedWeek] = useState("")
   const [questionMode, setQuestionMode] = useState("predefined") // 'predefined' or 'custom'
 
+  const [predefinedTheoryQuestionSets, setPredefinedTheoryQuestionSets] = useState<QuestionSet[]>([])
+  const [predefinedPracticalQuestionSets, setpredefinedPracticalQuestionSets] = useState<QuestionSet[]>([])
+  const [presetsData, setPresetsData] = useState<PresetsByWeek>({
+    week1: [],
+    week2: [],
+    week3: []
+  })
+
   // State for Theory Questions
-  const [theoryQuestionType, setTheoryQuestionType] = useState("predefined") // 'predefined' or 'custom'
+  // const [theoryQuestionType, setTheoryQuestionType] = useState("predefined") // 'predefined' or 'custom'
   const [customTheoryQuestions, setCustomTheoryQuestions] = useState("")
   const [selectedPredefinedTheorySet, setSelectedPredefinedTheorySet] = useState("")
 
   // State for Practical Questions
-  const [practicalQuestionType, setPracticalQuestionType] = useState("predefined") // 'predefined' or 'custom'
-
+  // const [practicalQuestionType, setPracticalQuestionType] = useState("predefined") // 'predefined' or 'custom'
   const [customPracticalQuestions, setCustomPracticalQuestions] = useState("")
   const [selectedPredefinedPracticalSet, setSelectedPredefinedPracticalSet] = useState("")
+
+
+  //presets
+  const [cBasicPatternSets, setcBasicPatternSets] = useState<Presets>({ practical: [], theory: [] })
+  const [cLogicalArraySets, setcLogicalArraySets] = useState<Presets>({ practical: [], theory: [] })
+  const [javaSets, setjavaSets] = useState<Presets>({ practical: [], theory: [] })
+
 
   // New states for the updated design
   const [activePredefinedTab, setActivePredefinedTab] = useState("theory")
@@ -224,6 +89,14 @@ export default function ReviewSetup() {
   //Errors
   const [theoryError, setTheoryError] = useState("")
   const [practicalError, setPracticalError] = useState("")
+  const [errors, setErrors] = useState<Errors>({
+    cBasicTheory: '',
+    cBasicPractical: '',
+    cLogicalTheory: '',
+    cLogicalPractical: '',
+    javaTheory: '',
+    javaPractical: ''
+  })
 
   const toggleSetExpansion = (setId: string, type: string, category?: string) => {
     if (category === "c-basic") {
@@ -245,7 +118,7 @@ export default function ReviewSetup() {
         setExpandedJavaPracticalSet(expandedJavaPracticalSet === setId ? "" : setId)
       }
     } else {
-      // For weeks 1-3
+
       if (type === "theory") {
         setExpandedTheorySet(expandedTheorySet === setId ? "" : setId)
       } else {
@@ -254,53 +127,174 @@ export default function ReviewSetup() {
     }
   }
 
-  const handleStartReview = async () => {
-    let inputTheoryQuestions = ""
-    let inputPracticalQuestions = ""
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getPresets()
 
+      setPresetsData(data)
+      setcBasicPatternSets(convertFirestorePresets(data.week1))
+      setcLogicalArraySets(convertFirestorePresets(data.week2))
+      setjavaSets(convertFirestorePresets(data.week3))
+    }
+
+    fetchData()
+
+  }, [])
+
+
+  useEffect(() => {
+
+    if (selectedWeek === 'week-1') {
+      setpredefinedPracticalQuestionSets(cBasicPatternSets.practical)
+      setPredefinedTheoryQuestionSets(cBasicPatternSets.theory)
+    } else if (selectedWeek === 'week-2') {
+      setpredefinedPracticalQuestionSets(cLogicalArraySets.practical)
+      setPredefinedTheoryQuestionSets(cLogicalArraySets.theory)
+    } else if (selectedWeek === 'week-3') {
+      setpredefinedPracticalQuestionSets(javaSets.practical)
+      setPredefinedTheoryQuestionSets(javaSets.theory)
+    } else {
+      setpredefinedPracticalQuestionSets([])
+      setPredefinedTheoryQuestionSets([])
+    }
+
+  }, [cBasicPatternSets, cLogicalArraySets, javaSets, selectedWeek])
+
+
+
+
+  const handleStartReview = async () => {
     if (selectedWeek === "week-4") {
-      // Handle Week 4 logic - you'll need to modify this based on your requirements
-      if (questionMode === "custom") {
-        inputTheoryQuestions = customCBasicTheoryQuestions + customCLogicalTheoryQuestions + customJavaTheoryQuestions
-        inputPracticalQuestions =
-          customCBasicPracticalQuestions + customCLogicalPracticalQuestions + customJavaPracticalQuestions
-      } else {
-        inputTheoryQuestions = selectedCBasicTheorySet + selectedCLogicalTheorySet + selectedJavaTheorySet
-        inputPracticalQuestions = selectedCBasicPracticalSet + selectedCLogicalPracticalSet + selectedJavaPracticalSet
+      // Week-4: Compilation
+
+      // Choose input sets depending on mode
+      const cBasicTheoryInput = questionMode === "custom" ? customCBasicTheoryQuestions : selectedCBasicTheorySet
+      const cBasicPracticalInput = questionMode === "custom" ? customCBasicPracticalQuestions : selectedCBasicPracticalSet
+
+      const cLogicalTheoryInput = questionMode === "custom" ? customCLogicalTheoryQuestions : selectedCLogicalTheorySet
+      const cLogicalPracticalInput = questionMode === "custom" ? customCLogicalPracticalQuestions : selectedCLogicalPracticalSet
+
+      const javaTheoryInput = questionMode === "custom" ? customJavaTheoryQuestions : selectedJavaTheorySet
+      const javaPracticalInput = questionMode === "custom" ? customJavaPracticalQuestions : selectedJavaPracticalSet
+
+      const isPresets = (questionMode !== "custom")
+
+      // ✅ validate separately
+      const errors: Errors = {
+        cBasicTheory: validateQuestions(cBasicTheoryInput, isPresets),
+        cBasicPractical: validateQuestions(cBasicPracticalInput, isPresets),
+        cLogicalTheory: validateQuestions(cLogicalTheoryInput, isPresets),
+        cLogicalPractical: validateQuestions(cLogicalPracticalInput, isPresets),
+        javaTheory: validateQuestions(javaTheoryInput, isPresets),
+        javaPractical: validateQuestions(javaPracticalInput, isPresets),
+      }
+
+
+      setErrors(errors)
+
+      const fieldNames: Record<string, string> = {
+        cBasicTheory: "C Basic Theory",
+        cBasicPractical: "C Basic Practical",
+        cLogicalTheory: "C Logical Theory",
+        cLogicalPractical: "C Logical Practical",
+        javaTheory: "Java Theory",
+        javaPractical: "Java Practical",
+      };
+
+
+      const firstErrorEntry = Object.entries(errors).find(([key, value]) => value);
+
+      if (firstErrorEntry) {
+        const [field, message] = firstErrorEntry;
+        const displayName = fieldNames[field] || field; 
+        toast.error(`Something wrong in ${displayName}: ${message}`);
+        return
+      }
+
+
+      const questions = {
+        week1T: await extractQustions(cBasicTheoryInput, (questionMode !== "custom"), cBasicPatternSets.theory),
+        week1P: await extractQustions(cBasicPracticalInput, (questionMode !== "custom"), cBasicPatternSets.practical),
+        week2T: await extractQustions(cLogicalTheoryInput, (questionMode !== "custom"), cLogicalArraySets.theory),
+        week2P: await extractQustions(cLogicalPracticalInput, (questionMode !== "custom"), cLogicalArraySets.practical),
+        week3T: await extractQustions(javaTheoryInput, (questionMode !== "custom"), javaSets.theory),
+        week3P: await extractQustions(javaPracticalInput, (questionMode !== "custom"), javaSets.practical),
+      }
+
+      const reviewState: ReviewState = {
+        studentName,
+        selectedWeek,
+        questions: {
+          "week-1": {
+            theory: questions.week1T,
+            practical: questions.week1P,
+          },
+          "week-2": {
+            theory: questions.week2T,
+            practical: questions.week2P,
+          },
+          "week-3": {
+            theory: questions.week3T,
+            practical: questions.week3P,
+          },
+        },
+      }
+
+      dispatch(setReviewState(reviewState))
+      navigate("/review")
+
+      if (questionMode === 'custom') {
+        addItem(questions, 'week-4', presetsData)
       }
     } else {
-      // Handle Weeks 1-3 logic
-      if (questionMode === "custom") {
-        inputTheoryQuestions = customTheoryQuestions
-        inputPracticalQuestions = customPracticalQuestions
-      } else {
-        inputTheoryQuestions = selectedPredefinedTheorySet
-        inputPracticalQuestions = selectedPredefinedPracticalSet
+      // Normal week (1–3)
+      const theoryInput =
+        questionMode === "custom" ? customTheoryQuestions : selectedPredefinedTheorySet
+      const practicalInput =
+        questionMode === "custom" ? customPracticalQuestions : selectedPredefinedPracticalSet
+
+      const theoryError = validateQuestions(theoryInput, (questionMode !== "custom"))
+      const practicalError = validateQuestions(practicalInput, (questionMode !== "custom"))
+
+      setTheoryError(theoryError)
+      setPracticalError(practicalError)
+
+
+      if (theoryError) {
+        toast.error(theoryError)
+        return
+      } else if (practicalError) {
+        toast.error(practicalError)
+        return
+      }
+
+      const questions = {
+        T: await extractQustions(theoryInput, (questionMode !== "custom"), predefinedTheoryQuestionSets),
+        P: await extractQustions(practicalInput, (questionMode !== "custom"), predefinedPracticalQuestionSets)
+      }
+
+
+      const reviewState: ReviewState = {
+        studentName,
+        selectedWeek,
+        questions: {
+          theory: questions.T,
+          practical: questions.P,
+        },
+      }
+
+      dispatch(setReviewState(reviewState))
+      navigate("/review")
+
+      if (questionMode === 'custom') {
+        addItem(questions, selectedWeek, presetsData)
+
       }
     }
 
-    const theoryValidationError = validateQuestions(inputTheoryQuestions)
-    const practicalValidationError = validateQuestions(inputPracticalQuestions)
 
-    setTheoryError(theoryValidationError)
-    setPracticalError(practicalValidationError)
-
-    if (theoryValidationError || practicalValidationError) return
-
-    const theoryQuestion = await extractQustions(inputTheoryQuestions)
-    const practicalQuestion = await extractQustions(inputPracticalQuestions)
-
-    const reviewState: ReviewState = {
-      studentName,
-      selectedWeek,
-      theoryQuestion,
-      practicalQuestion,
-    }
-
-    console.log(reviewState)
-    dispatch(setReviewState(reviewState))
-    navigate("/review")
   }
+
 
 
 
@@ -389,10 +383,10 @@ export default function ReviewSetup() {
 
           ) : (
             <RenderPredefinedQuestionBox
-              title="Select Question"
+              title={'Select Question'}
               activeTab={activePredefinedTab}
               setActiveTab={setActivePredefinedTab}
-              theorySets={predefinedQuestionSets}
+              theorySets={predefinedTheoryQuestionSets}
               practicalSets={predefinedPracticalQuestionSets}
               selectedTheorySet={selectedPredefinedTheorySet}
               setSelectedTheorySet={setSelectedPredefinedTheorySet}
@@ -419,8 +413,8 @@ export default function ReviewSetup() {
                 setTheoryValue={setCustomCBasicTheoryQuestions}
                 practicalValue={customCBasicPracticalQuestions}
                 setPracticalValue={setCustomCBasicPracticalQuestions}
-                theoryError={theoryError}
-                practicalError={practicalError}
+                theoryError={errors.cBasicTheory}
+                practicalError={errors.cBasicPractical}
               />
 
               <RenderCustomQuestionBox
@@ -431,8 +425,8 @@ export default function ReviewSetup() {
                 setTheoryValue={setCustomCLogicalTheoryQuestions}
                 practicalValue={customCLogicalPracticalQuestions}
                 setPracticalValue={setCustomCLogicalPracticalQuestions}
-                theoryError={theoryError}
-                practicalError={practicalError}
+                theoryError={errors.cLogicalTheory}
+                practicalError={errors.cLogicalPractical}
               />
 
 
@@ -444,8 +438,8 @@ export default function ReviewSetup() {
                 setTheoryValue={setCustomJavaTheoryQuestions}
                 practicalValue={customJavaPracticalQuestions}
                 setPracticalValue={setCustomJavaPracticalQuestions}
-                theoryError={theoryError}
-                practicalError={practicalError}
+                theoryError={errors.javaTheory}
+                practicalError={errors.javaPractical}
               />
 
             </>

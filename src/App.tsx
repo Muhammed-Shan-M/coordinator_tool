@@ -2,6 +2,8 @@
 import Start from './components/Start'
 import ReviewDisplay from './components/ReviewDisplay'
 import { Routes, Route } from "react-router-dom"
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const App = () => {
   return (
@@ -10,6 +12,7 @@ const App = () => {
         <Route path='/' element={<Start/>} />
         <Route path='/review' element={<ReviewDisplay/>} />
       </Routes>
+      <ToastContainer position="top-right" autoClose={5000} theme="dark"  />
     </div>
   )
 }

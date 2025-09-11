@@ -1,163 +1,360 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Star } from "lucide-react" // Import Star icon
-import { Rootstate } from "@/redux/Store"
+import { Star } from "lucide-react"
+import type { Rootstate } from "@/redux/Store"
 import { setReviewState, resetReviewState } from "@/redux/slice/qustions"
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2"
 import { useNavigate } from "react-router-dom"
-import { findTotalMark, findTotalRating } from "@/util/utility"
+import { findAnsweredQuestions, findMarks, findTotalMark, findTotalRating, getWeek4ClipboardText } from "@/util/utility"
+import { CompilationWeekQuestions, NormalWeekMarks, NormalWeekQuestions, Question, ReviewState, Segment, Week4Marks, WeekName } from "@/util/type"
 
-export default function ReviewSummary() {
-  // const allQustions = useSelector((state: Rootstate) => state.review.theoryQuestion)
+
+export default function ReviewSummary({ resetStates }: { resetStates: () => void }) {
+
   const reviewState = useSelector((state: Rootstate) => state.review)
 
-  //for answered questions
-  const theoryansweredQuestions = reviewState.theoryQuestion.filter((qustion) => qustion.answered === true)
-  const totalTheoryAnsweredMark = findTotalMark(theoryansweredQuestions)
+  const currentWeek = reviewState.selectedWeek
+  const isWeek4 = currentWeek === 'week-4'
+
+
+
+  const segments:Segment[] = [
+    { key: "week-1", label: "C Basic Pattern (Week 1)" },
+    { key: "week-2", label: "C Logic Array (Week 2)"},
+    { key: "week-3", label: "Java OOPS (Week 3)" },
+  ] as const
+
+  const [selectedSegment, setSelectedSegment] = useState<WeekName>("week-1")
+
+  // const matchesSelectedSegment = (text?: string) => {
+  //   if (!isWeek4) return true
+  //   const lower = (text || "").toLowerCase()
+  //   const seg = segments.find((s) => s.key === selectedSegment)
+  //   return seg ? seg.keywords.some((k) => lower.includes(k)) : true
+  // }
+
+  // for answered questions (filtered by segment if week 4)
+  const theoryansweredQuestions = useMemo(
+    () => {
+      // if (isWeek4) {
+      //   const compilationWeek = reviewState.questions as CompilationWeekQuestions
+      //   return {
+      //     questions:compilationWeek[selectedSegment].theory.filter((q) => q.answered),
+      //     totalQuestions: compilationWeek[selectedSegment].theory.length
+      //   }
+      // } else {
+      //   const normalWeek = reviewState.questions.theory as Question[]
+      //   return {
+      //     questions:normalWeek.filter((q) => q.answered),
+      //     totalQuestions: normalWeek.length
+      //   }
+      // }
+      return findAnsweredQuestions(isWeek4,reviewState,selectedSegment,'theory')
+    },
+    [reviewState.questions, isWeek4, selectedSegment],
+  )
+  const totalTheoryAnsweredMark = findTotalMark(theoryansweredQuestions.questions,theoryansweredQuestions.totalQuestions)
   const totalTheoryAnsweredRating = findTotalRating(totalTheoryAnsweredMark)
 
-  //for practical answered
-  const practicalQuestionsAnswered = reviewState.practicalQuestion.filter((question) => question.answered === true)
-  const totalPracticalMark = findTotalMark(practicalQuestionsAnswered)
+  // for practical answered (filtered by segment if week 4)
+  const practicalQuestionsAnswered = useMemo(
+    () => {
+      // if (isWeek4) {
+      //   const compilationWeek = reviewState.questions as CompilationWeekQuestions
+      //   return {
+      //     questions:compilationWeek[selectedSegment].practical.filter((q) => q.answered),
+      //     totalQuestions: compilationWeek[selectedSegment].practical.length
+      //   }
+      // } else {
+      //   const normalWeek = reviewState.questions.practical as Question[]
+      //   return {
+      //     questions:normalWeek.filter((q) => q.answered),
+      //     totalQuestions: normalWeek.length
+      //   }
+      // }
+      return findAnsweredQuestions(isWeek4, reviewState, selectedSegment, 'practical')
+    },
+    [reviewState.questions, isWeek4, selectedSegment]
+  )
+  const totalPracticalMark = findTotalMark(practicalQuestionsAnswered.questions,practicalQuestionsAnswered.totalQuestions)
   const totalPracticalRating = findTotalRating(totalPracticalMark)
 
-  // console.log('hello', totalPracticalMark, totalPracticalRating)
+  // for not answered theory (kept as-is: not filtered by segment per request)
+  // const initialTheoryNotAnsweredQuestions = reviewState.theoryQuestion
+  //   .filter((qustion) => qustion.notanswered === true)
+  //   .map((question) => question.text)
+  //   .join("\n")
 
-  // for not answered theory
-  const initialTheoryNotAnsweredQuestions = reviewState.theoryQuestion.filter((qustion) => qustion.notanswered === true).map((question) => question.text).join("\n")
+  function getNotAnsweredQuestions(reviewState: ReviewState, type: 'practical' | 'theory'): string {
+    // Week 1-3 or normal week
+    if ('theory' in reviewState.questions) {
+      const qs = reviewState.questions as NormalWeekQuestions;
+      const notAnswered =
+        type === 'practical'
+          ? qs.practical.filter((q) => q.notanswered)
+          : qs.theory.filter((q) => q.notanswered);
+      return notAnswered.map((q) => q.text).join('\n');
+    }
+    // Week 4 (CompilationWeekQuestions)
+    else {
+      const qs = reviewState.questions as CompilationWeekQuestions;
+
+      // Custom week name mapping
+      const weekNameMap: Record<string, string> = {
+        'week-1': 'C Basic Pattern',
+        'week-2': 'C Logic Array',
+        'week-3': 'Java OOPs',
+      };
+
+      return Object.entries(qs)
+        .map(([weekKey, weekQuestions]) => {
+          const notAnswered =
+            type === 'practical'
+              ? weekQuestions.practical.filter((q) => q.notanswered)
+              : weekQuestions.theory.filter((q) => q.notanswered);
+
+          if (notAnswered.length === 0) return ''; // skip empty weeks
+
+
+          const questionsText = notAnswered.map((q) => q.text).join('\n');
+          const weekName = weekNameMap[weekKey] || weekKey; // fallback to key
+          return `${weekName}\n${questionsText}`;
+        })
+        .filter(Boolean) // remove empty strings
+        .join('\n\n'); // separate weeks with a blank line
+    }
+  }
+
+
+  const initialTheoryNotAnsweredQuestions = getNotAnsweredQuestions(reviewState, 'theory')
   const [theoryNotAnsweredQuestionsText, setTheoryNotAnsweredQuestionsText] = useState(
     initialTheoryNotAnsweredQuestions,
   )
 
-  // Dummy data for not answered practical questions (max 4 for demo)
-  const initialPracticalNotAnsweredQuestions = reviewState.practicalQuestion.filter((question) => question.notanswered === true).map((question) => question.text).join('\n')
+
+  const initialPracticalNotAnsweredQuestions = getNotAnsweredQuestions(reviewState, 'practical')
   const [practicalNotAnsweredQuestionsText, setPracticalNotAnsweredQuestionsText] = useState(
     initialPracticalNotAnsweredQuestions,
   )
 
+  const [practicalMarks, setPracticalMarks] = useState(
+    typeof totalPracticalMark === "number" && !isNaN(totalPracticalMark) ? totalPracticalMark.toString() : "",
+  )
 
- const [practicalMarks, setPracticalMarks] = useState(
-  typeof totalPracticalMark === 'number' && !isNaN(totalPracticalMark)
-    ? totalPracticalMark.toString()
-    : ''
-);
+  const [theoryMarks, setTheoryMarks] = useState(
+    typeof totalTheoryAnsweredMark === "number" && !isNaN(totalTheoryAnsweredMark)
+      ? totalTheoryAnsweredMark.toString()
+      : "",
+  )
 
-const [theoryMarks, setTheoryMarks] = useState(
-  typeof totalTheoryAnsweredMark === 'number' && !isNaN(totalTheoryAnsweredMark)
-    ? totalTheoryAnsweredMark.toString()
-    : ''
-);
+
+  // Week 4 states
+  const [week4Marks, setWeek4Marks] = useState<Week4Marks>({
+    'week-1': { P: "", T: "" },
+    'week-2': { P: "", T: "" },
+    'week-3': { P: "", T: "" },
+  });
+
+  useEffect(() => {
+    if(isWeek4){
+      const marks =  findMarks(reviewState,isWeek4) as Week4Marks
+      setWeek4Marks(marks)
+    }else {
+      const marks = findMarks(reviewState,isWeek4) as NormalWeekMarks
+      setPracticalMarks(marks.P)
+      setTheoryMarks(marks.T)
+    }
+  },[reviewState.questions, isWeek4])
+
+  const handleWeek4Change = (subject: string, type: "P" | "T", value: string) => {
+    setWeek4Marks((prev: any) => ({
+      ...prev,
+      [subject]: {
+        ...prev[subject],
+        [type]: value,
+      },
+    }));
+  };
+
+
+
   const [feedbackText, setFeedbackText] = useState("")
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    setTheoryNotAnsweredQuestionsText(initialTheoryNotAnsweredQuestions)
-  }, [initialTheoryNotAnsweredQuestions])
+  // useEffect(() => {
+  //   setTheoryNotAnsweredQuestionsText(initialTheoryNotAnsweredQuestions)
+  // }, [initialTheoryNotAnsweredQuestions])
+
+  // useEffect(() => {
+  //   setPracticalNotAnsweredQuestionsText(initialPracticalNotAnsweredQuestions)
+  // }, [initialPracticalNotAnsweredQuestions])
 
   useEffect(() => {
     setPracticalNotAnsweredQuestionsText(initialPracticalNotAnsweredQuestions)
-  }, [initialPracticalNotAnsweredQuestions])
+    setTheoryNotAnsweredQuestionsText(initialTheoryNotAnsweredQuestions)
+  }, [reviewState])
 
   const handleNextReview = () => {
     Swal.fire({
-      title: 'Confirm Action',
-      text: 'Have you copied the current pending questions and marks? Once you proceed, this data will be cleared and cannot be recovered.',
-      icon: 'warning',
+      title: "Confirm Action",
+      text: "Have you copied the current pending questions and marks? Once you proceed, this data will be cleared and cannot be recovered.",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Yes, continue',
-      cancelButtonText: 'Cancel',
-      background: '#1a1a1a',
-      color: '#ffffff',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
+      confirmButtonText: "Yes, continue",
+      cancelButtonText: "Cancel",
+      background: "#1a1a1a",
+      color: "#ffffff",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
     }).then((result) => {
       if (result.isConfirmed) {
-        const clearedTheoryQuestions = reviewState.theoryQuestion.map((question) => ({
-          ...question,
+        // const clearedTheoryQuestions = reviewState.theoryQuestion.map((question) => ({
+        //   ...question,
+        //   answered: false,
+        //   notanswered: false,
+        //   performance: null,
+        // }))
+
+        // const clearedPracticalQuestions = reviewState.practicalQuestion.map((question) => ({
+        //   ...question,
+        //   answered: false,
+        //   notanswered: false,
+        //   performance: null,
+        // }))
+
+        // const updatedReviewState = {
+        //   ...reviewState,
+        //   theoryQuestion: clearedTheoryQuestions,
+        //   practicalQuestion: clearedPracticalQuestions,
+        // }
+
+        const resetQuestion = (q: Question): Question => ({
+          ...q,
           answered: false,
           notanswered: false,
           performance: null,
-        }));
+        });
 
-        const clearedPracticalQuestions = reviewState.practicalQuestion.map((question) => ({
-          ...question,
-          answered: false,
-          notanswered: false,
-          performance: null,
-        }));
+        let updatedReviewState
 
+        if ("theory" in reviewState.questions) {
 
-        const updatedReviewState = {
-          ...reviewState,
-          theoryQuestion: clearedTheoryQuestions,
-          practicalQuestion: clearedPracticalQuestions
-        };
+          const qs = reviewState.questions as NormalWeekQuestions
+          const normal: NormalWeekQuestions = {
+            theory: qs.theory.map(resetQuestion),
+            practical: qs.practical.map(resetQuestion),
+          }
+          updatedReviewState = { ...reviewState, questions: normal };
+        } else {
 
+          const qs = reviewState.questions as CompilationWeekQuestions
+          const compilation: CompilationWeekQuestions = Object.fromEntries(
+            Object.entries(qs).map(([weekName, week]) => [
+              weekName,
+              {
+                theory: week.theory.map(resetQuestion),
+                practical: week.practical.map(resetQuestion),
+              },
+            ])
+          );
+          updatedReviewState = { ...reviewState, questions: compilation };
+        }
+
+        resetStates()
         dispatch(setReviewState(updatedReviewState))
       }
-    });
-
-
+    })
   }
 
   const handleGoHome = () => {
     Swal.fire({
-      title: 'Return to Home?',
-      text: 'Are you sure you want to return to the home page? This action will permanently delete all current data, including the question set.',
-      icon: 'warning',
+      title: "Return to Home?",
+      text: "Are you sure you want to return to the home page? This action will permanently delete all current data, including the question set.",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Yes, go to Home',
-      cancelButtonText: 'Cancel',
-      background: '#1a1a1a',
-      color: '#ffffff',
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
+      confirmButtonText: "Yes, go to Home",
+      cancelButtonText: "Cancel",
+      background: "#1a1a1a",
+      color: "#ffffff",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
     }).then((result) => {
       if (result.isConfirmed) {
-        dispatch(resetReviewState());
-        navigate('/');
+        dispatch(resetReviewState())
+        navigate("/")
       }
-    });
-
+    })
   }
 
   const handleCopyToClipboard = () => {
-    if (theoryMarks === '' && practicalMarks === '') {
-      alert('Please enter both theory and practical marks.');
-      return
-    } else if (theoryMarks === '') {
-      alert('Please enter the theory marks.');
-      return
-    } else if (practicalMarks === '') {
-      alert('Please enter the practical marks.');
-      return
+  if (isWeek4) {
+    if (Object.values(week4Marks).some((item) => item.P === "" || item.T === "")) {
+      alert("Please enter all theory and practical marks.");
+      return;
+    }
+
+    const week4Questions = reviewState.questions as CompilationWeekQuestions
+
+    const clipboardText = getWeek4ClipboardText(week4Marks, week4Questions, feedbackText);
+    navigator.clipboard.writeText(clipboardText);
+    alert("Review summary copied to clipboard!");
+  } else {
+    if (theoryMarks === "" && practicalMarks === "") {
+      alert("Please enter both theory and practical marks.");
+      return;
+    } else if (theoryMarks === "") {
+      alert("Please enter the theory marks.");
+      return;
+    } else if (practicalMarks === "") {
+      alert("Please enter the practical marks.");
+      return;
     }
 
     navigator.clipboard.writeText(
       `Theory:\n${theoryNotAnsweredQuestionsText}\n\n` +
       `Practical:\n${practicalNotAnsweredQuestionsText}\n\n\n` +
-      (feedbackText ? `Feedback: ${feedbackText}\n\n\n` : '') +
+      (feedbackText ? `Feedback: ${feedbackText}\n\n\n` : "") +
       `P: ${practicalMarks}\n` +
       `T: ${theoryMarks}\n`,
-    )
-    alert("Review summary copied to clipboard!")
+    );
+    alert("Review summary copied to clipboard!");
   }
+};
 
   return (
-    <div className="mt-12 flex flex-col items-center justify-center w-full max-w-7xl mx-auto relative">
+    <div className="mt-3 flex flex-col items-center justify-center w-full max-w-7xl mx-auto relative">
+      {isWeek4 && (
+        <div className="w-full mb-4">
+          <div className="flex flex-wrap gap-2">
+            {segments.map((seg) => (
+              <Button
+                key={seg.key}
+                onClick={() => setSelectedSegment(seg.key)}
+                className={
+                  selectedSegment === seg.key
+                    ? "bg-[#333333] text-gray-100"
+                    : "bg-[#1f1f1f] text-gray-300 hover:bg-[#2a2a2a]"
+                }
+              >
+                {seg.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Top Section: Answered Theory Questions with Ratings */}
-      <div className="w-full bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg mb-6">
+      <div id="answered-theory-sec" className="w-full bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg mb-6">
         <div className="flex justify-between items-center mb-6 border-b border-[#333333] pb-4">
           <h2 className="text-2xl font-bold text-gray-100">Answered Theory Questions with Ratings</h2>
-          {theoryansweredQuestions.length > 0 &&
+          {theoryansweredQuestions.questions.length > 0 && (
             <div className="flex items-center gap-2 text-gray-200">
               <span className="text-lg font-semibold">Total Mark: {totalTheoryAnsweredMark}</span>
               {Array.from({ length: 3 }).map((_, i) => (
@@ -167,12 +364,12 @@ const [theoryMarks, setTheoryMarks] = useState(
                 />
               ))}
             </div>
-          }
+          )}
         </div>
         <div className="h-[350px] overflow-y-auto pr-2">
           <div className="space-y-4">
-            {theoryansweredQuestions.length > 0 ? (
-              theoryansweredQuestions.map((question) => (
+            {theoryansweredQuestions.questions.length > 0 ? (
+              theoryansweredQuestions.questions.map((question) => (
                 <div
                   key={question.id}
                   className="bg-[#2A2A2A] p-4 rounded-md border border-[#333333] flex items-center justify-between"
@@ -197,11 +394,12 @@ const [theoryMarks, setTheoryMarks] = useState(
         </div>
       </div>
 
-      {/* Middle Section: Practical Questions An */}
+      {/* Middle Section: Practical Questions Answered */}
       <div className="w-full bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg mb-6">
         <div className="flex justify-between items-center mb-6 border-b border-[#333333] pb-4">
-          <h2 className="text-2xl font-bold text-gray-100">Answered Theory Questions with Ratings</h2>
-          {practicalQuestionsAnswered.length > 0 &&
+          {/* Keeping original heading text as in your code */}
+          <h2 className="text-2xl font-bold text-gray-100">Answered Practical Questions with Ratings</h2>
+          {practicalQuestionsAnswered.questions.length > 0 && (
             <div className="flex items-center gap-2 text-gray-200">
               <span className="text-lg font-semibold">Total Mark: {totalPracticalMark}</span>
               {Array.from({ length: 3 }).map((_, i) => (
@@ -211,12 +409,12 @@ const [theoryMarks, setTheoryMarks] = useState(
                 />
               ))}
             </div>
-          }
+          )}
         </div>
         <div className="h-[150px] overflow-y-auto pr-2">
           <div className="space-y-3">
-            {practicalQuestionsAnswered.length > 0 ? (
-              practicalQuestionsAnswered.map((question) => (
+            {practicalQuestionsAnswered.questions.length > 0 ? (
+              practicalQuestionsAnswered.questions.map((question) => (
                 <div
                   key={question.id}
                   className="bg-[#2A2A2A] p-3 rounded-md border border-[#333333] flex items-center justify-between"
@@ -272,8 +470,6 @@ const [theoryMarks, setTheoryMarks] = useState(
               Practical Questions
             </Label>
             <div className="h-[120px] overflow-y-auto pr-2">
-              {" "}
-              {/* Smaller height for practical questions */}
               <Textarea
                 id="practical-not-answered-questions"
                 placeholder="List of not answered practical questions (max 1-4)"
@@ -294,8 +490,6 @@ const [theoryMarks, setTheoryMarks] = useState(
           <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
             <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">Feedback</h2>
             <div className="h-[250px] overflow-y-auto pr-2">
-              {" "}
-              {/* Increased height for more space */}
               <Textarea
                 id="feedback"
                 placeholder="Enter your feedback here..."
@@ -307,7 +501,7 @@ const [theoryMarks, setTheoryMarks] = useState(
           </div>
 
           {/* Mark Updation Box */}
-          <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
+          {/* <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
             <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">Mark Updation</h2>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -335,7 +529,81 @@ const [theoryMarks, setTheoryMarks] = useState(
                 />
               </div>
             </div>
+          </div> */}
+
+          <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
+            <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">
+              Mark Updation
+            </h2>
+
+            {!isWeek4 ? (
+              <table className="w-full text-gray-200 border-collapse border border-[#333333]">
+                <thead>
+                  <tr>
+                    <th className="border border-[#333333] p-2"></th>
+                    <th className="border border-[#333333] p-2">Mark</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-[#333333] p-2">P</td>
+                    <td className="border border-[#333333] p-2">
+                      <input
+                        type="text"
+                        value={practicalMarks}
+                        onChange={(e) => setPracticalMarks(e.target.value)}
+                        placeholder="Enter practical marks"
+                        className="w-full bg-transparent text-gray-200 placeholder:text-gray-500 focus:outline-none selection:bg-[#444444] selection:text-gray-100"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-[#333333] p-2">T</td>
+                    <td className="border border-[#333333] p-2">
+                      <input
+                        type="text"
+                        value={theoryMarks}
+                        onChange={(e) => setTheoryMarks(e.target.value)}
+                        placeholder="Enter theory marks"
+                        className="w-full bg-transparent text-gray-200 placeholder:text-gray-500 focus:outline-none selection:bg-[#444444] selection:text-gray-100"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full text-gray-200 border-collapse border border-[#333333]">
+                <thead>
+                  <tr>
+                    <th className="border border-[#333333] p-2"></th>
+                    <th className="border border-[#333333] p-2">C Logic</th>
+                    <th className="border border-[#333333] p-2">C Basic</th>
+                    <th className="border border-[#333333] p-2">Java OOPs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {["P", "T"].map((type) => (
+                    <tr key={type}>
+                      <td className="border border-[#333333] p-2">{type}</td>
+                      {["week-1", "week-2", "week-3"].map((subject) => (
+                        <td key={subject} className="border border-[#333333] p-2">
+                          <input
+                            type="text"
+                            value={week4Marks[subject as keyof typeof week4Marks][type as "P" | "T"]}
+                            onChange={(e) => handleWeek4Change(subject, type as "P" | "T", e.target.value)}
+                            placeholder={`${type} marks`}
+                            className="w-full bg-transparent text-gray-200 placeholder:text-gray-500 focus:outline-none selection:bg-[#444444] selection:text-gray-100"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
+
+
         </div>
       </div>
 
