@@ -12,6 +12,7 @@ import Swal from "sweetalert2"
 import { useNavigate } from "react-router-dom"
 import { findAnsweredQuestions, findMarks, findTotalMark, findTotalRating, getWeek4ClipboardText } from "@/util/utility"
 import { CompilationWeekQuestions, NormalWeekMarks, NormalWeekQuestions, Question, ReviewState, Segment, Week4Marks, WeekName } from "@/util/type"
+import { toast } from "react-toastify"
 
 
 export default function ReviewSummary({ resetStates }: { resetStates: () => void }) {
@@ -296,7 +297,7 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
   const handleCopyToClipboard = () => {
   if (isWeek4) {
     if (Object.values(week4Marks).some((item) => item.P === "" || item.T === "")) {
-      alert("Please enter all theory and practical marks.");
+      toast.error("Please enter all theory and practical marks.")
       return;
     }
 
@@ -304,7 +305,7 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
 
     const clipboardText = getWeek4ClipboardText(week4Marks, week4Questions, feedbackText);
     navigator.clipboard.writeText(clipboardText);
-    alert("Review summary copied to clipboard!");
+    toast.success("Review summary copied to clipboard!")
   } else {
     if (theoryMarks === "" && practicalMarks === "") {
       alert("Please enter both theory and practical marks.");
@@ -324,7 +325,8 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
       `P: ${practicalMarks}\n` +
       `T: ${theoryMarks}\n`,
     );
-    alert("Review summary copied to clipboard!");
+
+    toast.success("Review summary copied to clipboard!");
   }
 };
 

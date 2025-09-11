@@ -1,8 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { PayloadAction } from "@reduxjs/toolkit"
-import { SetAnsweredPayload, CommenPayload, Question } from "./../../util/type";
+import { SetAnsweredPayload, CommenPayload } from "./../../util/type";
 import { handleUpdate } from "@/util/utility";
-import { ReviewState,CompilationWeekPayload, CompilationCommenWeekPayload} from "./../../util/type";
+import { ReviewState } from "./../../util/type";
 
 const initialState: ReviewState = {
     studentName: '',
