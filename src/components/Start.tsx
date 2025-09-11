@@ -202,7 +202,7 @@ export default function ReviewSetup() {
       };
 
 
-      const firstErrorEntry = Object.entries(errors).find(([key, value]) => value);
+      const firstErrorEntry = Object.entries(errors).find(([_key, value]) => value);
 
       if (firstErrorEntry) {
         const [field, message] = firstErrorEntry;

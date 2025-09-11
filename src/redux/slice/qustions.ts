@@ -14,7 +14,7 @@ const reviewSlice = createSlice({
     name: 'review',
     initialState,
     reducers: {
-        setReviewState: (state, action: PayloadAction<ReviewState>) => {
+        setReviewState: (_state, action: PayloadAction<ReviewState>) => {
             return action.payload
         },
         resetReviewState: () => initialState,
