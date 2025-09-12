@@ -1,7 +1,7 @@
 "use client"
 
 import { useNavigate } from "react-router-dom"
-import { Home, ArrowLeft, AlertTriangle } from "lucide-react"
+import {  ArrowLeft, AlertTriangle } from "lucide-react"
 
 export default function NotFound() {
   const navigate = useNavigate()
