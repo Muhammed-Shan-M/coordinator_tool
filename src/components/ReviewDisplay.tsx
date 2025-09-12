@@ -129,6 +129,8 @@ export default function ReviewDisplay() {
   }
 
   useEffect(() => {
+    console.log();
+    
     if (!isCompositeWeek) {
       const normal = reviewState.questions as NormalWeekQuestions
       if (normal.theory.length === 0 && normal.practical.length === 0) {
