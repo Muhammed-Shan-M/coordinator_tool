@@ -118,7 +118,7 @@ export default function ReviewDisplay() {
         toast.error(`Error ${data.status}: Something went wrong while fetching questions.`)
       }
     }
-    
+
     setIsAnswereLoading(false)
   }
 
@@ -304,10 +304,10 @@ export default function ReviewDisplay() {
                           Not Answered
                         </Button>
                         <Button
-                          className="text-xs px-3 py-1 h-auto bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border border-[#404040] hover:border-[#505050] transition-all duration-200"
+                          className="text-xs px-3 py-1 h-auto bg-transparent text-[#255f38] border border-[#255f38] hover:bg-[#255f38] hover:text-white rounded-md transition-all duration-200"
                           onClick={() => handleAnswer(question.id, currentFilter)}
                         >
-                          For Answer
+                          Answer
                         </Button>
                       </div>
                     </div>
