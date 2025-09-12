@@ -43,7 +43,7 @@ export const validateQuestions = (text: string, isPresets: boolean) => {
   }else if (lines.length === 0) {
 
     return 'Please enter at least one question';
-    
+
   }
 
   if(isPresets)return ""
@@ -109,7 +109,6 @@ export const findTotalMark = (questions: Question[], totalQuestion: number) => {
 
 
   let finalMark = parseInt((answerdCount >= halfThreShould ? 5 + bonus : bonus).toFixed(2))
-  console.log('question : ', questions, ' totalQuestion : ', totalQuestion, 'halThereShould : ', halfThreShould, "answereCount : ", answerdCount, 'avgStar : ', avgStar, 'perfFraction', perfFraction, 'bonus : ', bonus, 'finalMark : ', finalMark)
 
   return Math.min(finalMark, 10)
 
@@ -185,14 +184,11 @@ export function getWeek4ClipboardText(
 
       // Practical questions
       const practicalQs = weekQuestions.practical.map((q) => `   - ${q.text}`).join('\n');
-      console.log('prac', practicalQs)
 
       // Theory questions
       const theoryQs = weekQuestions.theory.map((q) => `   - ${q.text}`).join('\n');
-      console.log("the", theoryQs)
 
       // Marks
-      console.log("mark", week4Marks, weekName)
       const marks = `P : ${week4Marks[weekKey as keyof typeof week4Marks].P}\nT : ${week4Marks[weekKey as keyof typeof week4Marks].T}`;
 
       return `${weekName}\npractical :\n${practicalQs}\ntheory :\n${theoryQs}\n\n${marks}`;

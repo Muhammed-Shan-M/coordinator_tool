@@ -3,7 +3,6 @@ import { useState, useEffect } from "react"
 import { X, Check } from "lucide-react"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
-import { sampleQuestions } from "./utility/sampleQuestion"
 import { ExtraQuestion } from "@/util/type"
 import { getExtraQuestions } from "@/util/ai-utility"
 import { useSelector } from "react-redux"
@@ -34,12 +33,6 @@ export default function ExtraQuestions({ isOpen, onClose }: QuestionModalProps) 
   const loadQuestions = async () => {
     setLoading(true)
     try {
-      // if (onFetchQuestions) {
-      //   const fetchedQuestions = await onFetchQuestions()
-      //   setQuestions(fetchedQuestions)
-      // } else {
-      //   setQuestions(sampleQuestions)
-      // }
 
       const data = await getExtraQuestions(reviewState.selectedWeek)
 
@@ -59,7 +52,6 @@ export default function ExtraQuestions({ isOpen, onClose }: QuestionModalProps) 
 
     } catch (error) {
       console.error("Error loading questions:", error)
-      setQuestions(sampleQuestions)
     } finally {
       setLoading(false)
     }
@@ -185,7 +177,6 @@ export default function ExtraQuestions({ isOpen, onClose }: QuestionModalProps) 
                         </button>
                       </div>
                     </div>
-                    {/* <div className="mt-3">{renderContent(question.content)}</div> */}
                     <div className="mt-3">{renderContent(question.content as any)}</div>
                   </div>
                 )
