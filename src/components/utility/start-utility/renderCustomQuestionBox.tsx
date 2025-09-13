@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useRef } from "react"
 
 interface RenderCustomQuestionBoxProps {
   title: string
@@ -27,6 +28,7 @@ export default function RenderCustomQuestionBox({
   theoryError,
   practicalError,
 }: RenderCustomQuestionBoxProps) {
+
 
 
   return (
@@ -68,15 +70,30 @@ export default function RenderCustomQuestionBox({
         />
         <p
           className={`text-sm ${(activeTab === "theory" && theoryError) ||
-              (activeTab === "practical" && practicalError)
-              ? "text-red-700"
-              : "text-gray-400"
+            (activeTab === "practical" && practicalError)
+            ? "text-red-700"
+            : "text-gray-400"
             }`}
         >
           {activeTab === "theory"
             ? theoryError || "Paste the questions separated with numbers or bullet points."
             : practicalError || "Paste the questions separated with numbers or bullet points."}
         </p>
+        {activeTab === 'practical' &&
+          <div className="flex items-center space-x-2">
+            <input
+              id="googleDoc"
+              type="checkbox"
+              className="accent-gray-400 h-4 w-4"
+            />
+            <label
+              htmlFor="googleDoc"
+              className="text-sm text-gray-100"
+            >
+              Click this if it’s a Google Docs link
+            </label>
+          </div>
+        }
       </div>
     </div>
   )
