@@ -39,7 +39,7 @@ export function extractTextAndLinks(htmlContent: string): Question[] {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlContent, "text/html");
 
-  let ind = 0
+  let ind = 0;
   const results = Array.from(doc.querySelectorAll("p"))
     .map((p) => {
       const link = p.querySelector("a");
@@ -52,19 +52,19 @@ export function extractTextAndLinks(htmlContent: string): Question[] {
         };
       } else {
 
-        const text = p.textContent.trim();
-        if (text) {
+        const match = p.textContent.trim().match(/^\d+\.\s*(.*)/);
+        if (match && match[1]) {
           return {
             id: ++ind,
-            text,
+            text: match[1].trim(),
           };
         }
       }
       return null;
     })
-    .filter(Boolean); // remove nulls
+    .filter(Boolean); 
 
-  return results as Question[]
+  return results as Question[];
 }
 
 
@@ -329,6 +329,8 @@ export const fecthDoc = async (docLink: string): Promise<FecthDocType> => {
 
 
     const html = await res.text()
+
+    console.log(html)
     return {
       questions: extractTextAndLinks(html),
       error: null

@@ -20,6 +20,9 @@ import AnswereModal from "./AnswereModal"
 import { CompilationWeekQuestions, NormalWeekQuestions, Question, WeekName } from "@/util/type"
 import ExtraQuestions from "./ExtraQuestions"
 import { toast } from "react-toastify";
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
+import { Copy } from "lucide-react"; // shadcn uses lucide-react for icons
 
 type FilterType = "theory" | "practical"
 
@@ -34,6 +37,8 @@ export default function ReviewDisplay() {
   const [weekName, setWeekName] = useState<WeekName>('week-1')
   const [currentQuestions, setCurrentQuestions] = useState<Question[]>([])
   const [showExtraQuestions, setShowExtraQuestions] = useState(false)
+
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
   // step 0 = week-1 (Basic Array Pattern), step 1 = week-2 (Logic Array Questions), step 2 = week-3 (Java OOPs Concept)
   const [stepIndex, setStepIndex] = useState(0)
@@ -235,6 +240,12 @@ export default function ReviewDisplay() {
   }
 
 
+  const copyUrl = (href :string | undefined) => {
+    navigator.clipboard.writeText(href|| "")
+    toast.success('URL has been copied successfully')
+  }
+
+
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-7xl mx-auto relative">
       {isCompositeWeek && (
@@ -280,18 +291,81 @@ export default function ReviewDisplay() {
               <div className="space-y-4">
                 {currentQuestions.length > 0 ? (
                   currentQuestions.map((question) => (
-                    <div key={question.id} className="bg-[#2A2A2A] p-4 rounded-md border border-[#333333]">
+                    <div
+                      key={question.id}
+                      className="bg-[#2A2A2A] p-4 rounded-md border border-[#333333] relative"
+                    >
+                      {/* Copy button only if href exists */}
+                      {question.href && (
+                        <button
+                          onClick={() => copyUrl(question.href)}
+                          className="absolute top-2 right-2 p-1 rounded-md hover:bg-[#333333] transition"
+                          title="Copy link"
+                        >
+                          <Copy className="w-4 h-4 text-gray-400 hover:text-gray-200" />
+                        </button>
+                      )}
+
                       <div className="flex items-start justify-between mb-3">
-                        {question.href ?
-                          (<a className="text-grey-200 flex-1" href={question.href}>{question.text}</a>) :
-                          (<p className="text-gray-200 flex-1">{question.text}</p>)
-                        }
+                        {question.href ? (
+                          <Tippy
+                            placement="top"
+                            trigger="mouseenter focus"
+                            delay={[0, 0]}
+                            duration={[200, 100]}
+                            arrow={false}
+                            interactive={false}
+                            allowHTML={true}
+                            content={
+                              <div className="bg-[#222] border border-[#333] rounded-lg w-[400px] h-[400px] shadow-lg overflow-hidden relative">
+                                {/* Loading overlay */}
+                                {loadingStates[question.href] !== false && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-[#222] z-10">
+                                    <div className="flex flex-col items-center gap-3">
+                                      <div className="w-8 h-8 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin"></div>
+                                      <p className="text-gray-400 text-sm">Loading preview...</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <iframe
+                                  src={question.href.replace("/edit", "/preview")}
+                                  className="w-full h-full"
+                                  title="Preview"
+                                  onLoad={() => {
+                                    setLoadingStates((prev) => ({
+                                      ...prev,
+                                      [question.href as string]: false,
+                                    }));
+                                  }}
+                                  style={{
+                                    opacity: loadingStates[question.href] === false ? 1 : 0,
+                                    transition: "opacity 0.3s ease-in-out",
+                                  }}
+                                />
+                              </div>
+                            }
+                          >
+                            <a
+                              href={question.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-gray-300 hover:text-gray-100 underline-offset-2 hover:underline"
+                            >
+                              {question.text}
+                            </a>
+                          </Tippy>
+                        ) : (
+                          <p className="text-gray-200 flex-1">{question.text}</p>
+                        )}
                       </div>
+
+                      {/* Buttons */}
                       <div className="flex gap-2">
                         <Button
                           className={`text-xs px-3 py-1 h-auto border transition-all duration-200 ${question.answered
-                            ? "bg-[#2d4a2d] border-[#4a6b4a] text-green-300 cursor-not-allowed opacity-70"
-                            : "bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border-[#404040] hover:border-[#505050]"
+                              ? "bg-[#2d4a2d] border-[#4a6b4a] text-green-300 cursor-not-allowed opacity-70"
+                              : "bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border-[#404040] hover:border-[#505050]"
                             }`}
                           disabled={question.answered}
                           onClick={() => openPopup(question.id)}
@@ -300,11 +374,19 @@ export default function ReviewDisplay() {
                         </Button>
                         <Button
                           className={`text-xs px-3 py-1 h-auto border transition-all duration-200 ${question.notanswered
-                            ? "bg-[#4a2d2d] border-[#6b4a4a] text-red-300 cursor-not-allowed opacity-70"
-                            : "bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border-[#404040] hover:border-[#505050]"
+                              ? "bg-[#4a2d2d] border-[#6b4a4a] text-red-300 cursor-not-allowed opacity-70"
+                              : "bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border-[#404040] hover:border-[#505050]"
                             }`}
                           disabled={question.notanswered}
-                          onClick={() => dispatch(setNotAnswered({ id: question.id, questionType: currentFilter, weekName }))}
+                          onClick={() =>
+                            dispatch(
+                              setNotAnswered({
+                                id: question.id,
+                                questionType: currentFilter,
+                                weekName,
+                              })
+                            )
+                          }
                         >
                           Not Answered
                         </Button>

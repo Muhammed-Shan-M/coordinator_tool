@@ -4,7 +4,6 @@ import { QuestionSet } from "@/util/type"
 import { ChevronDown, ChevronUp, Check } from "lucide-react"
 import { useState } from "react"
 import Tippy from "@tippyjs/react";
-import { followCursor } from "tippy.js";
 import "tippy.js/dist/tippy.css";
 // import PreviewModal from "@/components/PatternModal"
 
