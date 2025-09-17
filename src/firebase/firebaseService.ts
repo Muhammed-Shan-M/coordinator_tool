@@ -1,40 +1,12 @@
 import { db } from './firebase'
 import { collection, addDoc, getDocs, updateDoc, doc } from "firebase/firestore"
-import { NormalWeekData, CompositeWeekData, FirestorePreset } from '@/util/type'
+import { NormalWeekData, CompositeWeekData, FirestorePreset, FireBaseQustionSet } from '@/util/type'
+import { href } from 'react-router-dom'
 
 
 
 
-// export const addItem = async (data: NormalWeekData | CompositeWeekData, week: string) => {
 
-//     if (week === 'week-4') {
-//         const compositeData = data as CompositeWeekData
-
-//         const promise = [1, 2, 3].map((num) => {
-//             const tkey = `week${num}T` as keyof CompositeWeekData
-//             const pkey = `week${num}P` as keyof CompositeWeekData
-
-//             const docData: FirestorePreset = {
-//                 week: `week-${num}`,
-//                 theoryQuestions: compositeData[tkey].map((item) => item.text),
-//                 practicalQuestions: compositeData[pkey].map((item) => item.text),
-//             }
-//             return addDoc(collection(db, "presets"), docData)
-//         })
-//         return Promise.all(promise)
-//     } else {
-
-//         const normalData = data as NormalWeekData
-
-//         const docData: FirestorePreset = {
-//             week,
-//             theoryQuestions: normalData.T.map((item) => item.text),
-//             practicalQuestions: normalData.P.map((item) => item.text),
-//         }
-
-//         return await addDoc(collection(db, "presets"), docData)
-//     }
-// }
 type ExistingData = {
   [key in "week1" | "week2" | "week3"]: FirestorePreset[]
 }
@@ -55,8 +27,14 @@ export const addItem = async (
 
       let docData: FirestorePreset = {
         week: `week-${num}`,
-        theoryQuestions: compositeData[tkey].map((item) => item.text),
-        practicalQuestions: compositeData[pkey].map((item) => item.text),
+        theoryQuestions: compositeData[tkey].map((item) => ({
+          href: item.href ? item.href : '',
+          text: item.text
+        })),
+        practicalQuestions: compositeData[pkey].map((item) => ({
+          href: item.href ? item.href : '',
+          text: item.text
+        })),
       }
 
       docData = removeDuplicateQuestions(docData, existingData[weekKey])
@@ -72,8 +50,14 @@ export const addItem = async (
 
     let docData: FirestorePreset = {
       week,
-      theoryQuestions: normalData.T.map((item) => item.text),
-      practicalQuestions: normalData.P.map((item) => item.text),
+      theoryQuestions: normalData.T.map((item) => ({
+          href: item.href ? item.href : '',
+          text: item.text
+        })),
+      practicalQuestions: normalData.P.map((item) => ({
+          href: item.href ? item.href : '',
+          text: item.text
+        })),
     }
 
     docData = removeDuplicateQuestions(docData, existingData[weekKey])
@@ -107,9 +91,16 @@ export const updateItem = async (id: string, data: Partial<{ name: string }>) =>
 }
 
 
-function arraysAreEqual(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false
-  return a.every((val, i) => val === b[i])
+function cleanHref(href: string) {
+  return href.split("&")[0].trim().toLowerCase();
+}
+
+function arraysAreEqual(a: FireBaseQustionSet[], b: FireBaseQustionSet[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((val, i) =>
+    val.text.trim().toLowerCase() === b[i].text.trim().toLowerCase() &&
+    cleanHref(val.href) === cleanHref(b[i].href)
+  );
 }
 
 
@@ -117,6 +108,8 @@ function removeDuplicateQuestions( newPreset: FirestorePreset,  existingPresets:
 
   let theory = newPreset.theoryQuestions
   let practical = newPreset.practicalQuestions
+
+  console.log('from remove duplicates',existingPresets )
 
   for (const preset of existingPresets) {
     if (arraysAreEqual(theory, preset.theoryQuestions)) {
@@ -130,6 +123,6 @@ function removeDuplicateQuestions( newPreset: FirestorePreset,  existingPresets:
   return {
     ...newPreset,
     theoryQuestions: theory,
-    practicalQuestions: practical,
+    practicalQuestions: practical, 
   }
 }

@@ -21,6 +21,7 @@ export type Question = {
   answered?: boolean
   notanswered?: boolean
   performance?: number | null
+  href?: string,
 }
 
 
@@ -47,13 +48,13 @@ export type WeekName = "week-1" | "week-2" | "week-3"
 
 // for Answered qustion payload
 
-interface NormalWeekPayload  {
+interface NormalWeekPayload {
   id: number
   performance: number
   questionType: "practical" | "theory"
 }
 
-export interface CompilationWeekPayload extends NormalWeekPayload{
+export interface CompilationWeekPayload extends NormalWeekPayload {
   weekName: WeekName
 }
 
@@ -103,10 +104,10 @@ export interface Errors {
 
 
 export interface Week4Marks {
-  'week-1': {P: string,T: string},
-  'week-2': {P: string,T: string},
-  'week-3': {P: string,T: string}
-} 
+  'week-1': { P: string, T: string },
+  'week-2': { P: string, T: string },
+  'week-3': { P: string, T: string }
+}
 
 
 export type Segment = {
@@ -115,13 +116,13 @@ export type Segment = {
 }
 
 
-export type NormalWeekMarks = {P:string, T: string}
+export type NormalWeekMarks = { P: string, T: string }
 
 
 
 export interface NormalWeekData {
-  T: Question[] 
-  P: Question[] 
+  T: Question[]
+  P: Question[]
 }
 
 
@@ -135,18 +136,33 @@ export interface CompositeWeekData {
 }
 
 
+// export interface FirestorePreset {
+//   id?: string
+//   week: string
+//   theoryQuestions: string[]
+//   practicalQuestions: string[]
+// }
+
+export interface FireBaseQustionSet {
+  href: string,
+  text: string
+}
+
+
 export interface FirestorePreset {
-  id?: string
-  week: string
-  theoryQuestions: string[]
-  practicalQuestions: string[]
+  id?: string,
+  week: string,
+  theoryQuestions: FireBaseQustionSet[],
+  practicalQuestions: FireBaseQustionSet[]
 }
 
 
 export interface QuestionSet {
   id: string
   name: string
-  questions: string[]
+  questions: FireBaseQustionSet[]
+  href?: string,
+  type?: string
 }
 
 export interface Presets {
@@ -183,4 +199,11 @@ export type ContentBlock = {
   type: "text" | "code" | string
   value: string
   language?: string
+}
+
+
+export type FecthDocType = {
+  questions: Question[],
+  error: null | string
+
 }

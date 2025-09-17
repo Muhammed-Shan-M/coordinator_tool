@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useRef } from "react"
 
 interface RenderCustomQuestionBoxProps {
   title: string
@@ -15,6 +14,9 @@ interface RenderCustomQuestionBoxProps {
   setPracticalValue: (value: string) => void
   theoryError: string
   practicalError: string
+  setIsGDLink:(value: boolean) => void
+  isGDLink: boolean,
+  week:string
 }
 
 export default function RenderCustomQuestionBox({
@@ -27,6 +29,9 @@ export default function RenderCustomQuestionBox({
   setPracticalValue,
   theoryError,
   practicalError,
+  setIsGDLink,
+  isGDLink,
+  week,
 }: RenderCustomQuestionBoxProps) {
 
 
@@ -79,12 +84,16 @@ export default function RenderCustomQuestionBox({
             ? theoryError || "Paste the questions separated with numbers or bullet points."
             : practicalError || "Paste the questions separated with numbers or bullet points."}
         </p>
-        {activeTab === 'practical' &&
+        {activeTab === 'practical' && (week !== 'week-3' && title !== "Java OOPs") &&
           <div className="flex items-center space-x-2">
             <input
               id="googleDoc"
               type="checkbox"
               className="accent-gray-400 h-4 w-4"
+              checked={isGDLink}
+              onChange={(e) => {
+                setIsGDLink(e.target.checked)
+              }}
             />
             <label
               htmlFor="googleDoc"

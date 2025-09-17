@@ -130,7 +130,7 @@ export default function ReviewDisplay() {
 
   useEffect(() => {
     console.log();
-    
+
     if (!isCompositeWeek) {
       const normal = reviewState.questions as NormalWeekQuestions
       if (normal.theory.length === 0 && normal.practical.length === 0) {
@@ -282,7 +282,10 @@ export default function ReviewDisplay() {
                   currentQuestions.map((question) => (
                     <div key={question.id} className="bg-[#2A2A2A] p-4 rounded-md border border-[#333333]">
                       <div className="flex items-start justify-between mb-3">
-                        <p className="text-gray-200 flex-1">{question.text}</p>
+                        {question.href ?
+                          (<a className="text-grey-200 flex-1" href={question.href}>{question.text}</a>) :
+                          (<p className="text-gray-200 flex-1">{question.text}</p>)
+                        }
                       </div>
                       <div className="flex gap-2">
                         <Button

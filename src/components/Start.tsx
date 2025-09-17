@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button"
 import { useDispatch } from "react-redux"
 import type { AppDispach } from "@/redux/Store"
 import { useNavigate } from "react-router-dom"
-import { validateQuestions, extractQustions, convertFirestorePresets } from "@/util/utility"
-import type { ReviewState, Errors, Presets, QuestionSet, PresetsByWeek } from "@/util/type"
+import { validateQuestions, extractQustions, convertFirestorePresets, extractTextAndLinks, fecthDoc } from "@/util/utility"
+import type { ReviewState, Errors, Presets, QuestionSet, PresetsByWeek, Question, FecthDocType, NormalWeekData } from "@/util/type"
 import { setReviewState } from "@/redux/slice/qustions"
 import RenderPredefinedQuestionBox from "./utility/start-utility/renderPredefinedQuestionBox"
 import RenderCustomQuestionBox from "./utility/start-utility/renderCustomQuestionBox"
@@ -23,6 +23,11 @@ export default function ReviewSetup() {
   const dispatch = useDispatch<AppDispach>()
   const navigate = useNavigate()
 
+  const [isGDLink, setIsGDLink] = useState<boolean>(false)
+  const [isGDLinkForCBasic,setIsGDLinkForCBasic] = useState<boolean>(false)
+  const [isGDLinkForCLogic,setIsGDLinkForCLogic] = useState<boolean>(false)
+
+  const [loading, setLoading] = useState<boolean>(false)
 
   const [studentName, setStudentName] = useState("")
   const [selectedWeek, setSelectedWeek] = useState("")
@@ -48,7 +53,7 @@ export default function ReviewSetup() {
 
 
   //presets
-  const [cBasicPatternSets, setcBasicPatternSets] = useState<Presets>({ practical: [], theory: [] })
+  const [cBasicPatternSets,  setcBasicPatternSets] = useState<Presets>({ practical: [], theory: [] })
   const [cLogicalArraySets, setcLogicalArraySets] = useState<Presets>({ practical: [], theory: [] })
   const [javaSets, setjavaSets] = useState<Presets>({ practical: [], theory: [] })
 
@@ -158,12 +163,30 @@ export default function ReviewSetup() {
       setPredefinedTheoryQuestionSets([])
     }
 
+    console.log('from useEffect : ',cBasicPatternSets)
+
   }, [cBasicPatternSets, cLogicalArraySets, javaSets, selectedWeek])
 
 
 
 
+
+  async function isGDLinkQuestion(input: string,isGDLink: boolean, presets: QuestionSet[]) {
+    if(isGDLink){
+      return await fecthDoc(input) 
+    }else{
+      return await extractQustions(input, (questionMode !== "custom"), presets)
+    }
+  }
+
+
+
+
   const handleStartReview = async () => {
+
+    const isPresets = (questionMode !== "custom")
+    setLoading(true)
+
     if (selectedWeek === "week-4") {
       // Week-4: Compilation
 
@@ -177,14 +200,12 @@ export default function ReviewSetup() {
       const javaTheoryInput = questionMode === "custom" ? customJavaTheoryQuestions : selectedJavaTheorySet
       const javaPracticalInput = questionMode === "custom" ? customJavaPracticalQuestions : selectedJavaPracticalSet
 
-      const isPresets = (questionMode !== "custom")
-
       // ✅ validate separately
       const errors: Errors = {
         cBasicTheory: validateQuestions(cBasicTheoryInput, isPresets),
-        cBasicPractical: validateQuestions(cBasicPracticalInput, isPresets),
+        cBasicPractical: isGDLinkForCBasic ? "" : validateQuestions(cBasicPracticalInput, isPresets),
         cLogicalTheory: validateQuestions(cLogicalTheoryInput, isPresets),
-        cLogicalPractical: validateQuestions(cLogicalPracticalInput, isPresets),
+        cLogicalPractical: isGDLinkForCLogic? "" : validateQuestions(cLogicalPracticalInput, isPresets),
         javaTheory: validateQuestions(javaTheoryInput, isPresets),
         javaPractical: validateQuestions(javaPracticalInput, isPresets),
       }
@@ -206,19 +227,45 @@ export default function ReviewSetup() {
 
       if (firstErrorEntry) {
         const [field, message] = firstErrorEntry;
-        const displayName = fieldNames[field] || field; 
+        const displayName = fieldNames[field] || field;
         toast.error(`Something wrong in ${displayName}: ${message}`);
+        setLoading(false)
         return
       }
 
 
       const questions = {
-        week1T: await extractQustions(cBasicTheoryInput, (questionMode !== "custom"), cBasicPatternSets.theory),
-        week1P: await extractQustions(cBasicPracticalInput, (questionMode !== "custom"), cBasicPatternSets.practical),
-        week2T: await extractQustions(cLogicalTheoryInput, (questionMode !== "custom"), cLogicalArraySets.theory),
-        week2P: await extractQustions(cLogicalPracticalInput, (questionMode !== "custom"), cLogicalArraySets.practical),
-        week3T: await extractQustions(javaTheoryInput, (questionMode !== "custom"), javaSets.theory),
-        week3P: await extractQustions(javaPracticalInput, (questionMode !== "custom"), javaSets.practical),
+        week1T: await extractQustions(cBasicTheoryInput, isPresets, cBasicPatternSets.theory),
+        week1P: await isGDLinkQuestion(cBasicPracticalInput,isGDLinkForCBasic,cBasicPatternSets.practical) as FecthDocType | Question[],
+        week2T: await extractQustions(cLogicalTheoryInput, isPresets, cLogicalArraySets.theory),
+        week2P: await isGDLinkQuestion(cLogicalPracticalInput,isGDLinkForCLogic,cLogicalArraySets.practical) as FecthDocType | Question[],
+        week3T: await extractQustions(javaTheoryInput, isPresets, javaSets.theory),
+        week3P: await extractQustions(javaPracticalInput, isPresets, javaSets.practical),
+      }
+
+      
+      if(isGDLinkForCBasic && 'error' in questions.week1P){
+        if(questions.week1P.error){
+          setErrors({...errors,cBasicPractical :questions.week1P.error})
+          const displayName = fieldNames['cBasicPractical']
+          toast.error(`Something wrong in ${displayName}: ${questions.week1P.error}`)
+          setLoading(false)
+          return
+        }else{          
+          questions.week1P = questions.week1P.questions
+        }
+      }
+      
+      if(isGDLinkForCLogic && 'error' in questions.week2P){
+        if(questions.week2P.error){
+          setErrors({...errors,cLogicalPractical: questions.week2P.error})
+          const displayName = fieldNames['cLogicalPractical']
+          toast.error(`Something wrong in ${displayName}: ${questions.week2P.error}`)
+          setLoading(false)
+          return
+        }else{
+          questions.week2P = questions.week2P.questions 
+        }
       }
 
       const reviewState: ReviewState = {
@@ -227,11 +274,11 @@ export default function ReviewSetup() {
         questions: {
           "week-1": {
             theory: questions.week1T,
-            practical: questions.week1P,
+            practical: questions.week1P as Question[],
           },
           "week-2": {
             theory: questions.week2T,
-            practical: questions.week2P,
+            practical: questions.week2P as Question[],
           },
           "week-3": {
             theory: questions.week3T,
@@ -240,12 +287,15 @@ export default function ReviewSetup() {
         },
       }
 
+
+      console.log(reviewState)
       dispatch(setReviewState(reviewState))
       navigate("/review")
 
-      if (questionMode === 'custom') {
-        addItem(questions, 'week-4', presetsData)
-      }
+      // if (questionMode === 'custom') {
+      //   addItem(questions, 'week-4', presetsData)
+      // }
+
     } else {
       // Normal week (1–3)
       const theoryInput =
@@ -253,33 +303,53 @@ export default function ReviewSetup() {
       const practicalInput =
         questionMode === "custom" ? customPracticalQuestions : selectedPredefinedPracticalSet
 
-      const theoryError = validateQuestions(theoryInput, (questionMode !== "custom"))
-      const practicalError = validateQuestions(practicalInput, (questionMode !== "custom"))
+      const theoryError = validateQuestions(theoryInput, isPresets)
+      const practicalErr = isGDLink ? '' : validateQuestions(practicalInput, isPresets)
 
       setTheoryError(theoryError)
-      setPracticalError(practicalError)
+      setPracticalError(practicalErr)
 
 
       if (theoryError) {
         toast.error(theoryError)
+        setLoading(false)
         return
-      } else if (practicalError) {
-        toast.error(practicalError)
+      } else if (practicalErr) {
+        toast.error(practicalErr)
+        setLoading(false)
         return
       }
 
-      const questions = {
-        T: await extractQustions(theoryInput, (questionMode !== "custom"), predefinedTheoryQuestionSets),
-        P: await extractQustions(practicalInput, (questionMode !== "custom"), predefinedPracticalQuestionSets)
+
+      const questions:NormalWeekData = {
+        T: await extractQustions(theoryInput, isPresets, predefinedTheoryQuestionSets),
+        P: []
       }
 
+      const rawP = await isGDLinkQuestion(practicalInput,isGDLink,predefinedPracticalQuestionSets) as FecthDocType | Question[]
+
+
+      if (isGDLink && 'error' in rawP) {
+        if (rawP.error) {
+          setPracticalError(rawP.error)
+          toast.error(rawP.error)
+          setLoading(false)
+          return
+        } else {
+          questions.P = rawP.questions
+        }
+      }else {
+        questions.P = rawP as Question[]
+      }
+
+      questions.P = questions.P as Question[]; 
 
       const reviewState: ReviewState = {
         studentName,
         selectedWeek,
         questions: {
           theory: questions.T,
-          practical: questions.P,
+          practical: questions.P
         },
       }
 
@@ -288,16 +358,16 @@ export default function ReviewSetup() {
 
       if (questionMode === 'custom') {
         addItem(questions, selectedWeek, presetsData)
-
       }
     }
+
+    setLoading(false)
 
 
   }
 
-
-
-
+  console.log();
+  
   const isStartReviewDisabled = !studentName || !selectedWeek
 
   return (
@@ -379,6 +449,9 @@ export default function ReviewSetup() {
               setPracticalValue={setCustomPracticalQuestions}
               theoryError={theoryError}
               practicalError={practicalError}
+              setIsGDLink={setIsGDLink}
+              isGDLink={isGDLink}
+              week={selectedWeek}
             />
 
           ) : (
@@ -415,6 +488,9 @@ export default function ReviewSetup() {
                 setPracticalValue={setCustomCBasicPracticalQuestions}
                 theoryError={errors.cBasicTheory}
                 practicalError={errors.cBasicPractical}
+                setIsGDLink={setIsGDLinkForCBasic}
+                isGDLink={isGDLinkForCBasic}
+                week={selectedWeek}
               />
 
               <RenderCustomQuestionBox
@@ -427,6 +503,9 @@ export default function ReviewSetup() {
                 setPracticalValue={setCustomCLogicalPracticalQuestions}
                 theoryError={errors.cLogicalTheory}
                 practicalError={errors.cLogicalPractical}
+                setIsGDLink={setIsGDLinkForCLogic}
+                isGDLink={isGDLinkForCLogic}
+                week={selectedWeek}
               />
 
 
@@ -440,6 +519,9 @@ export default function ReviewSetup() {
                 setPracticalValue={setCustomJavaPracticalQuestions}
                 theoryError={errors.javaTheory}
                 practicalError={errors.javaPractical}
+                setIsGDLink={setIsGDLink}
+                isGDLink={isGDLink}
+                week={selectedWeek}
               />
 
             </>
@@ -504,7 +586,7 @@ export default function ReviewSetup() {
           className="px-8 py-3 bg-[#333333] hover:bg-[#444444] text-gray-200 font-semibold rounded-md shadow-md transition-colors duration-200"
           disabled={isStartReviewDisabled}
         >
-          START REVIEW
+          {loading ? 'LOADING...' : "START REVIEW"}
         </Button>
       </div>
     </div>

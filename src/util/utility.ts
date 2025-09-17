@@ -1,13 +1,15 @@
 import { PayloadAction } from '@reduxjs/toolkit';
-import { CommenPayload, Question, ReviewState, SetAnsweredPayload, CompilationWeekPayload, CompilationCommenWeekPayload, UpdateType, BasePayload, CompilationWeekQuestions, Week4Marks, WeekName,NormalWeekMarks, FirestorePreset, Presets, QuestionSet } from './type'
+import { CommenPayload, Question, ReviewState, SetAnsweredPayload, CompilationWeekPayload, CompilationCommenWeekPayload, UpdateType, BasePayload, CompilationWeekQuestions, Week4Marks, WeekName, NormalWeekMarks, FirestorePreset, Presets, QuestionSet, FecthDocType } from './type'
 
 
 
 
-export async function extractQustions(input: string, isPresets: boolean, allQustions: QuestionSet[]) {
 
-  if(isPresets){
-    const questions = allQustions.find((item) => item.id === input)?.questions.map((item,ind) => ({id:ind + 1, text:item})) ?? []
+export async function extractQustions(input: string, isPresets: boolean, allQustions: QuestionSet[]):Promise<Question[]> {
+
+  if (isPresets) {
+    console.log(allQustions,input)
+    const questions = allQustions.find((item) => item.id === input)?.questions.map((item, ind) => ({ id: ind + 1, text: item.text, href:item.href })) ?? []
     return questions
   }
 
@@ -32,21 +34,55 @@ export async function extractQustions(input: string, isPresets: boolean, allQust
 }
 
 
+
+export function extractTextAndLinks(htmlContent: string): Question[] {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlContent, "text/html");
+
+  let ind = 0
+  const results = Array.from(doc.querySelectorAll("p"))
+    .map((p) => {
+      const link = p.querySelector("a");
+      if (link) {
+
+        return {
+          id: ++ind,
+          text: link.textContent.trim(),
+          href: link.href,
+        };
+      } else {
+
+        const text = p.textContent.trim();
+        if (text) {
+          return {
+            id: ++ind,
+            text,
+          };
+        }
+      }
+      return null;
+    })
+    .filter(Boolean); // remove nulls
+
+  return results as Question[]
+}
+
+
 export const validateQuestions = (text: string, isPresets: boolean) => {
 
   const lines = text.trim().split('\n').filter(line => line.trim() !== '');
 
-  if(lines.length === 0 && isPresets){
+  if (lines.length === 0 && isPresets) {
 
     return 'Please select a question from the available list of sets before proceeding.'
 
-  }else if (lines.length === 0) {
+  } else if (lines.length === 0) {
 
     return 'Please enter at least one question';
 
   }
 
-  if(isPresets)return ""
+  if (isPresets) return ""
 
 
   const numberParenPattern = /^\d+\)\s*.+/ // (1) Question
@@ -248,22 +284,6 @@ export function findAnsweredQuestions(isWeek4: boolean, reviewState: ReviewState
 
 // for conver firebase data to presets type
 
-// export const convertFirestorePresets = (docs: FirestorePreset[]): Presets => {
-//   return {
-//     theory: docs.flatMap((doc) =>
-//       doc.theoryQuestions.map((q, i) => ({
-//         id: `${doc.id}-theory-${i}`,
-//         question: q,
-//       }))
-//     ),
-//     practical: docs.flatMap((doc) =>
-//       doc.practicalQuestions.map((q, i) => ({
-//         id: `${doc.id}-practical-${i}`,
-//         question: q,
-//       }))
-//     ),
-//   }
-// }
 export const convertFirestorePresets = (docs: FirestorePreset[]): Presets => {
   return {
     theory: docs.reduce((acc, doc, i) => {
@@ -276,7 +296,7 @@ export const convertFirestorePresets = (docs: FirestorePreset[]): Presets => {
       }
       return acc
     }, [] as { id: string; name: string; questions: any[] }[]),
-    
+
     practical: docs.reduce((acc, doc, i) => {
       if (doc.practicalQuestions.length > 0) {
         acc.push({
@@ -294,7 +314,34 @@ export const convertFirestorePresets = (docs: FirestorePreset[]): Presets => {
 
 
 
+// for fetch googledoc data 
 
+export const fecthDoc = async (docLink: string): Promise<FecthDocType> => {
+  try {
+    const id = docLink.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
+    if (!id) throw new Error('id not tracked ')
+
+
+    const url = `https://docs.google.com/document/d/${id[1]}/export?format=html`;
+    const res = await fetch(url);
+
+    if (!res.ok) throw new Error('Failed to load url : is it public?')
+
+
+    const html = await res.text()
+    return {
+      questions: extractTextAndLinks(html),
+      error: null
+    }
+
+  } catch (error: any) {
+    console.log('from fetch google doc : ', error.message)
+    return {
+      questions: [],
+      error: error.message
+    }
+  }
+}
 
 
 
