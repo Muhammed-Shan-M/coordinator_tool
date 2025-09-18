@@ -32,29 +32,10 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
 
   const [selectedSegment, setSelectedSegment] = useState<WeekName>("week-1")
 
-  // const matchesSelectedSegment = (text?: string) => {
-  //   if (!isWeek4) return true
-  //   const lower = (text || "").toLowerCase()
-  //   const seg = segments.find((s) => s.key === selectedSegment)
-  //   return seg ? seg.keywords.some((k) => lower.includes(k)) : true
-  // }
 
-  // for answered questions (filtered by segment if week 4)
+
   const theoryansweredQuestions = useMemo(
     () => {
-      // if (isWeek4) {
-      //   const compilationWeek = reviewState.questions as CompilationWeekQuestions
-      //   return {
-      //     questions:compilationWeek[selectedSegment].theory.filter((q) => q.answered),
-      //     totalQuestions: compilationWeek[selectedSegment].theory.length
-      //   }
-      // } else {
-      //   const normalWeek = reviewState.questions.theory as Question[]
-      //   return {
-      //     questions:normalWeek.filter((q) => q.answered),
-      //     totalQuestions: normalWeek.length
-      //   }
-      // }
       return findAnsweredQuestions(isWeek4,reviewState,selectedSegment,'theory')
     },
     [reviewState.questions, isWeek4, selectedSegment],
@@ -62,22 +43,9 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
   const totalTheoryAnsweredMark = findTotalMark(theoryansweredQuestions.questions,theoryansweredQuestions.totalQuestions)
   const totalTheoryAnsweredRating = findTotalRating(totalTheoryAnsweredMark)
 
-  // for practical answered (filtered by segment if week 4)
+
   const practicalQuestionsAnswered = useMemo(
     () => {
-      // if (isWeek4) {
-      //   const compilationWeek = reviewState.questions as CompilationWeekQuestions
-      //   return {
-      //     questions:compilationWeek[selectedSegment].practical.filter((q) => q.answered),
-      //     totalQuestions: compilationWeek[selectedSegment].practical.length
-      //   }
-      // } else {
-      //   const normalWeek = reviewState.questions.practical as Question[]
-      //   return {
-      //     questions:normalWeek.filter((q) => q.answered),
-      //     totalQuestions: normalWeek.length
-      //   }
-      // }
       return findAnsweredQuestions(isWeek4, reviewState, selectedSegment, 'practical')
     },
     [reviewState.questions, isWeek4, selectedSegment]
@@ -85,14 +53,10 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
   const totalPracticalMark = findTotalMark(practicalQuestionsAnswered.questions,practicalQuestionsAnswered.totalQuestions)
   const totalPracticalRating = findTotalRating(totalPracticalMark)
 
-  // for not answered theory (kept as-is: not filtered by segment per request)
-  // const initialTheoryNotAnsweredQuestions = reviewState.theoryQuestion
-  //   .filter((qustion) => qustion.notanswered === true)
-  //   .map((question) => question.text)
-  //   .join("\n")
+
 
   function getNotAnsweredQuestions(reviewState: ReviewState, type: 'practical' | 'theory'): string {
-    // Week 1-3 or normal week
+
     if ('theory' in reviewState.questions) {
       const qs = reviewState.questions as NormalWeekQuestions;
       const notAnswered =
@@ -101,11 +65,11 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
           : qs.theory.filter((q) => q.notanswered);
       return notAnswered.map((q) => q.text).join('\n');
     }
-    // Week 4 (CompilationWeekQuestions)
+
     else {
       const qs = reviewState.questions as CompilationWeekQuestions;
 
-      // Custom week name mapping
+
       const weekNameMap: Record<string, string> = {
         'week-1': 'C Basic Pattern',
         'week-2': 'C Logic Array',
@@ -119,15 +83,15 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
               ? weekQuestions.practical.filter((q) => q.notanswered)
               : weekQuestions.theory.filter((q) => q.notanswered);
 
-          if (notAnswered.length === 0) return ''; // skip empty weeks
+          if (notAnswered.length === 0) return ''; 
 
 
           const questionsText = notAnswered.map((q) => q.text).join('\n');
-          const weekName = weekNameMap[weekKey] || weekKey; // fallback to key
+          const weekName = weekNameMap[weekKey] || weekKey; 
           return `${weekName}\n${questionsText}`;
         })
-        .filter(Boolean) // remove empty strings
-        .join('\n\n'); // separate weeks with a blank line
+        .filter(Boolean) 
+        .join('\n\n'); 
     }
   }
 
@@ -189,13 +153,7 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  // useEffect(() => {
-  //   setTheoryNotAnsweredQuestionsText(initialTheoryNotAnsweredQuestions)
-  // }, [initialTheoryNotAnsweredQuestions])
 
-  // useEffect(() => {
-  //   setPracticalNotAnsweredQuestionsText(initialPracticalNotAnsweredQuestions)
-  // }, [initialPracticalNotAnsweredQuestions])
 
   useEffect(() => {
     setPracticalNotAnsweredQuestionsText(initialPracticalNotAnsweredQuestions)
@@ -216,25 +174,6 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
       cancelButtonColor: "#3085d6",
     }).then((result) => {
       if (result.isConfirmed) {
-        // const clearedTheoryQuestions = reviewState.theoryQuestion.map((question) => ({
-        //   ...question,
-        //   answered: false,
-        //   notanswered: false,
-        //   performance: null,
-        // }))
-
-        // const clearedPracticalQuestions = reviewState.practicalQuestion.map((question) => ({
-        //   ...question,
-        //   answered: false,
-        //   notanswered: false,
-        //   performance: null,
-        // }))
-
-        // const updatedReviewState = {
-        //   ...reviewState,
-        //   theoryQuestion: clearedTheoryQuestions,
-        //   practicalQuestion: clearedPracticalQuestions,
-        // }
 
         const resetQuestion = (q: Question): Question => ({
           ...q,
@@ -503,36 +442,6 @@ export default function ReviewSummary({ resetStates }: { resetStates: () => void
           </div>
 
           {/* Mark Updation Box */}
-          {/* <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
-            <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">Mark Updation</h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="practical-marks" className="text-gray-200">
-                  Practical Marks
-                </Label>
-                <Input
-                  id="practical-marks"
-                  placeholder="Enter practical marks"
-                  value={practicalMarks}
-                  onChange={(e) => setPracticalMarks(e.target.value)}
-                  className="bg-[#222222] border-[#333333] text-gray-200 placeholder:text-gray-500 focus:ring-offset-[#1A1A1A]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="theory-marks" className="text-gray-200">
-                  Theory Marks
-                </Label>
-                <Input
-                  id="theory-marks"
-                  placeholder="Enter theory marks"
-                  value={theoryMarks}
-                  onChange={(e) => setTheoryMarks(e.target.value)}
-                  className="bg-[#222222] border-[#333333] text-gray-200 placeholder:text-gray-500 focus:ring-offset-[#1A1A1A]"
-                />
-              </div>
-            </div>
-          </div> */}
-
           <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
             <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">
               Mark Updation

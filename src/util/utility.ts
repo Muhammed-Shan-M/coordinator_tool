@@ -15,21 +15,19 @@ export async function extractQustions(input: string, isPresets: boolean, allQust
 
   const cleanedInput = input.replace(/\n\s*\n/g, '\n').trim();
 
-  // Split by lines starting with "number.", "number)", or "-"
   const questionSegments = cleanedInput.split(/\n(?=\d+[.\)]|-)/);
 
   let questionId = 0;
   return questionSegments.map(segment => {
-    // Match lines starting with "number.", "number)", or "-"
     const match = segment.match(/^(\d+[.\)]|-)\s*(.*)/s);
     if (!match) return null;
 
-    const text = match[2].trim().replace(/\n/g, ' '); // Join multi-line text into single line
+    const text = match[2].trim().replace(/\n/g, ' '); 
     return {
-      id: ++questionId, // Assign sequential ID
+      id: ++questionId, 
       text: text
     };
-  }).filter(q => q !== null); // Remove invalid segments
+  }).filter(q => q !== null); 
 
 }
 
@@ -85,9 +83,9 @@ export const validateQuestions = (text: string, isPresets: boolean) => {
   if (isPresets) return ""
 
 
-  const numberParenPattern = /^\d+\)\s*.+/ // (1) Question
-  const numberDotPattern = /^\d+\.\s*.+/; // 1. Question
-  const hyphenPattern = /^-\s*.+/; // - Question
+  const numberParenPattern = /^\d+\)\s*.+/ // (1) qustion
+  const numberDotPattern = /^\d+\.\s*.+/; // 1. question
+  const hyphenPattern = /^-\s*.+/; // - question
 
   let format = null;
   if (numberParenPattern.test(lines[0])) {
@@ -186,7 +184,6 @@ export function getWeek4ClipboardText(
   week4Questions: CompilationWeekQuestions,
   feedbackText?: string
 ): string {
-  // Map week keys to custom names
   const weekNameMap: Record<string, string> = {
     'week-1': 'C Basic Pattern',
     'week-2': 'C Logic Array',
@@ -199,13 +196,10 @@ export function getWeek4ClipboardText(
     .map(([weekKey, weekQuestions]) => {
       const weekName = weekNameMap[weekKey] || weekKey;
 
-      // Practical questions
       const practicalQs = weekQuestions.practical.map((q) => `   - ${q.text}`).join('\n');
 
-      // Theory questions
       const theoryQs = weekQuestions.theory.map((q) => `   - ${q.text}`).join('\n');
 
-      // Marks
       const marks = `P : ${week4Marks[weekKey as keyof typeof week4Marks].P}\nT : ${week4Marks[weekKey as keyof typeof week4Marks].T}`;
 
       return `${weekName}\npractical :\n${practicalQs}\ntheory :\n${theoryQs}\n\n${marks}`;

@@ -3,9 +3,6 @@ import { collection, addDoc, getDocs, updateDoc, doc } from "firebase/firestore"
 import { NormalWeekData, CompositeWeekData, FirestorePreset, FireBaseQustionSet } from '@/util/type'
 
 
-
-
-
 type ExistingData = {
   [key in "week1" | "week2" | "week3"]: FirestorePreset[]
 }
@@ -22,7 +19,7 @@ export const addItem = async (
     const promise = [1, 2, 3].map((num) => {
       const tkey = `week${num}T` as keyof CompositeWeekData
       const pkey = `week${num}P` as keyof CompositeWeekData
-      const weekKey = `week${num}` as keyof ExistingData   // <- cast to correct type
+      const weekKey = `week${num}` as keyof ExistingData   
 
       let docData: FirestorePreset = {
         week: `week-${num}`,
@@ -45,7 +42,7 @@ export const addItem = async (
     return Promise.all(promise)
   } else {
     const normalData = data as NormalWeekData
-    const weekKey = (week === 'week-1' ? 'week1' : week === 'week-2'? 'week2' : 'week3' ) as keyof ExistingData  // <- cast here
+    const weekKey = (week === 'week-1' ? 'week1' : week === 'week-2'? 'week2' : 'week3' ) as keyof ExistingData  
 
     let docData: FirestorePreset = {
       week,

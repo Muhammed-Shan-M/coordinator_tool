@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp, Check } from "lucide-react"
 import { useState } from "react"
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
-// import PreviewModal from "@/components/PatternModal"
 
 interface RenderSetsProps {
   sets: QuestionSet[]
@@ -127,7 +126,6 @@ export default function RenderSets({
         </div>
       )}
 
-      {/* {openPatternModal && <PreviewModal url={slectedUrl} onClose={() => setOpenPatternModal(false)}/>} */}
     </div>
 
   )

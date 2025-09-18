@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-// import { predefinedQuestionSets, predefinedPracticalQuestionSets } from "../util/predefined"
 import { useDispatch } from "react-redux"
 import type { AppDispach } from "@/redux/Store"
 import { useNavigate } from "react-router-dom"
@@ -42,12 +41,10 @@ export default function ReviewSetup() {
   })
 
   // State for Theory Questions
-  // const [theoryQuestionType, setTheoryQuestionType] = useState("predefined") // 'predefined' or 'custom'
   const [customTheoryQuestions, setCustomTheoryQuestions] = useState("")
   const [selectedPredefinedTheorySet, setSelectedPredefinedTheorySet] = useState("")
 
   // State for Practical Questions
-  // const [practicalQuestionType, setPracticalQuestionType] = useState("predefined") // 'predefined' or 'custom'
   const [customPracticalQuestions, setCustomPracticalQuestions] = useState("")
   const [selectedPredefinedPracticalSet, setSelectedPredefinedPracticalSet] = useState("")
 
@@ -83,7 +80,7 @@ export default function ReviewSetup() {
   const [expandedJavaTheorySet, setExpandedJavaTheorySet] = useState("")
   const [expandedJavaPracticalSet, setExpandedJavaPracticalSet] = useState("")
 
-  // Week 4 custom states
+
   const [customCBasicTheoryQuestions, setCustomCBasicTheoryQuestions] = useState("")
   const [customCBasicPracticalQuestions, setCustomCBasicPracticalQuestions] = useState("")
   const [customCLogicalTheoryQuestions, setCustomCLogicalTheoryQuestions] = useState("")
@@ -188,9 +185,8 @@ export default function ReviewSetup() {
     setLoading(true)
 
     if (selectedWeek === "week-4") {
-      // Week-4: Compilation
 
-      // Choose input sets depending on mode
+
       const cBasicTheoryInput = questionMode === "custom" ? customCBasicTheoryQuestions : selectedCBasicTheorySet
       const cBasicPracticalInput = questionMode === "custom" ? customCBasicPracticalQuestions : selectedCBasicPracticalSet
 
@@ -200,7 +196,6 @@ export default function ReviewSetup() {
       const javaTheoryInput = questionMode === "custom" ? customJavaTheoryQuestions : selectedJavaTheorySet
       const javaPracticalInput = questionMode === "custom" ? customJavaPracticalQuestions : selectedJavaPracticalSet
 
-      // ✅ validate separately
       const errors: Errors = {
         cBasicTheory: validateQuestions(cBasicTheoryInput, isPresets),
         cBasicPractical: isGDLinkForCBasic ? "" : validateQuestions(cBasicPracticalInput, isPresets),
@@ -292,12 +287,9 @@ export default function ReviewSetup() {
       dispatch(setReviewState(reviewState))
       navigate("/review")
 
-      // if (questionMode === 'custom') {
-      //   addItem(questions, 'week-4', presetsData)
-      // }
 
     } else {
-      // Normal week (1–3)
+
       const theoryInput =
         questionMode === "custom" ? customTheoryQuestions : selectedPredefinedTheorySet
       const practicalInput =

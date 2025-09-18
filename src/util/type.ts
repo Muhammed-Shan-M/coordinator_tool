@@ -1,20 +1,5 @@
 
 
-// export type Question = {
-//     id: number,
-//     text: string,
-//     answered?: boolean,
-//     notanswered?: boolean
-//     performance?: number | null
-// }
-
-// export interface ReviewState {
-//     studentName: string,
-//     selectedWeek: string,
-//     practicalQuestion: Question[]
-//     theoryQuestion: Question[]
-// }
-
 export type Question = {
   id: number
   text: string
@@ -136,12 +121,6 @@ export interface CompositeWeekData {
 }
 
 
-// export interface FirestorePreset {
-//   id?: string
-//   week: string
-//   theoryQuestions: string[]
-//   practicalQuestions: string[]
-// }
 
 export interface FireBaseQustionSet {
   href: string,
@@ -178,19 +157,13 @@ export type PresetsByWeek = {
 }
 
 
-// export type ExtraQuestion = {
-//   id: string
-//   title: string
-//   content: string
-//   category?: string
-//   isAsked?: boolean
-// }
+
 
 
 export type ExtraQuestion = {
   id: string
   title: string
-  content: string | ContentBlock[]  // ✅ string OR array of objects
+  content: string | ContentBlock[] 
   category?: string
   isAsked?: boolean
 }

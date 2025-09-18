@@ -1,4 +1,3 @@
-// import React from 'react'
 import Start from './components/Start'
 import ReviewDisplay from './components/ReviewDisplay'
 import NotFound from './components/NotFound';

@@ -23,6 +23,7 @@ import { toast } from "react-toastify";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 import { Copy } from "lucide-react"; // shadcn uses lucide-react for icons
+import Swal from "sweetalert2";
 
 type FilterType = "theory" | "practical"
 
@@ -101,37 +102,76 @@ export default function ReviewDisplay() {
     }
   }
 
+
   const handleAnswer = async (id: number, currentFilterStr: string) => {
-    const question = currentQuestions.find((item) => item.id === id)
+    const question = currentQuestions.find((item) => item.id === id);
+    if (!question) return;
 
-    setAiQuestion(question?.text || "")
-    setIsAiModalOpen(true)
-    setIsAnswereLoading(true)
+    const proceed = async () => {
+      setAiQuestion(question.text || "");
+      setIsAiModalOpen(true);
+      setIsAnswereLoading(true);
 
-    const data = await askQuestionToAi(question?.text || "", currentFilterStr, laguage)
+      try {
+        const data = await askQuestionToAi(question.text || "", question.href || "", currentFilterStr, laguage);
 
-    if (data.success) {
-      setAiAnswere(data.answer)
-    } else {
-      if (data.status === 503) {
-        toast.error(`Error ${data.status}: The AI server is busy or temporarily unavailable. Please try again in a moment.`)
-
-      } else if (data.status === 429) {
-        toast.error(`Error ${data.status}: Our service is currently using the free tier of the AI, and today’s usage limit has been reached. Please try again tomorrow. We appreciate your understanding.`)
-
-      } else {
-        toast.error(`Error ${data.status}: Something went wrong while fetching questions.`)
+        if (data.success) {
+          setAiAnswere(data.answer);
+        } else {
+          if (data.status === 503) {
+            toast.error(
+              `Error ${data.status}: The AI server is busy or temporarily unavailable. Please try again in a moment.`
+            );
+          } else if (data.status === 429) {
+            toast.error(
+              `Error ${data.status}: Our service is currently using the free tier of the AI, and today’s usage limit has been reached. Please try again tomorrow. We appreciate your understanding.`
+            );
+          } else {
+            toast.error(`Error ${data.status}: ${data.error}`);
+          }
+        }
+      } finally {
+        setIsAnswereLoading(false);
       }
-    }
+    };
 
-    setIsAnswereLoading(false)
-  }
+    if (question.href) {
+
+      const result = await Swal.fire({
+        title: "Confirm Request",
+        text: "This question contains an image reference. Please note that our AI service is running on a free trial. Submitting image-based requests will consume the limit faster, and in some cases, the generated logic may not be fully accurate. If you wish to proceed, click Confirm. Otherwise, we recommend using another AI service for better reliability.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Confirm",
+        cancelButtonText: "Cancel",
+        background: "#1a1a1a",
+        color: "#ffffff",
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+      });
+
+      if (result.isConfirmed) {
+        await proceed();
+      }
+    } else {
+
+      await proceed();
+    }
+  };
+
+
+
+
+
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       setIsAiModalOpen(false)
     }
   }
+
+
+
 
   useEffect(() => {
     console.log();
@@ -152,7 +192,11 @@ export default function ReviewDisplay() {
     }
   }, [reviewState, isCompositeWeek, navigate])
 
+
+
   const allQuestionArea = useRef<HTMLDivElement>(null)
+
+
 
   useEffect(() => {
     if (isAiModalOpen) {
@@ -165,6 +209,9 @@ export default function ReviewDisplay() {
     }
   }, [isAiModalOpen])
 
+
+
+
   useEffect(() => {
     if (reviewState.selectedWeek === "week-4") {
       setLaguage(weekName === "week-1" || weekName === "week-2" ? "c" : "java");
@@ -172,6 +219,8 @@ export default function ReviewDisplay() {
       setLaguage(reviewState.selectedWeek === "week-1" || reviewState.selectedWeek === "week-2" ? "c" : "java");
     }
   }, [weekName, reviewState.selectedWeek]);
+
+
 
   const handleNext = () => {
     if (!isCompositeWeek) return
@@ -183,6 +232,8 @@ export default function ReviewDisplay() {
       handleScrollTop()
     }
   }
+
+
 
   const handlePrevious = () => {
     if (!isCompositeWeek) return
@@ -196,12 +247,16 @@ export default function ReviewDisplay() {
 
   }
 
+
+
   const handleScrollTop = () => {
     allQuestionArea.current?.scrollTo({
       top: 0,
-      behavior: "smooth", // optional
+      behavior: "smooth",
     })
   }
+
+
 
   const updateCurrentQustion = (index: number) => {
     const week = index === 0 ? 'week-1' : index === 1 ? 'week-2' : 'week-3'
@@ -210,12 +265,9 @@ export default function ReviewDisplay() {
     setCurrentQuestions(compilation[week][currentFilter])
   }
 
-  
-  const handleComplete = () => {
-    // if (!isCompositeWeek) return
-    setIsCompleted(true)
-  }
 
+
+  
   useEffect(() => {
     if (isCompleted) {
       const element = document.getElementById("answered-theory-sec");
@@ -242,8 +294,8 @@ export default function ReviewDisplay() {
   }
 
 
-  const copyUrl = (href :string | undefined) => {
-    navigator.clipboard.writeText(href|| "")
+  const copyUrl = (href: string | undefined) => {
+    navigator.clipboard.writeText(href || "")
     toast.success('URL has been copied successfully')
   }
 
@@ -366,8 +418,8 @@ export default function ReviewDisplay() {
                       <div className="flex gap-2">
                         <Button
                           className={`text-xs px-3 py-1 h-auto border transition-all duration-200 ${question.answered
-                              ? "bg-[#2d4a2d] border-[#4a6b4a] text-green-300 cursor-not-allowed opacity-70"
-                              : "bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border-[#404040] hover:border-[#505050]"
+                            ? "bg-[#2d4a2d] border-[#4a6b4a] text-green-300 cursor-not-allowed opacity-70"
+                            : "bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border-[#404040] hover:border-[#505050]"
                             }`}
                           disabled={question.answered}
                           onClick={() => openPopup(question.id)}
@@ -376,8 +428,8 @@ export default function ReviewDisplay() {
                         </Button>
                         <Button
                           className={`text-xs px-3 py-1 h-auto border transition-all duration-200 ${question.notanswered
-                              ? "bg-[#4a2d2d] border-[#6b4a4a] text-red-300 cursor-not-allowed opacity-70"
-                              : "bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border-[#404040] hover:border-[#505050]"
+                            ? "bg-[#4a2d2d] border-[#6b4a4a] text-red-300 cursor-not-allowed opacity-70"
+                            : "bg-[#1a1a1a] hover:bg-[#2d2d2d] text-gray-300 border-[#404040] hover:border-[#505050]"
                             }`}
                           disabled={question.notanswered}
                           onClick={() =>
@@ -544,7 +596,7 @@ export default function ReviewDisplay() {
               <>
                 <Button
                   className="px-6 h-9 bg-[#2A2A2A] text-gray-200 border border-[#333333] hover:bg-[#333333]"
-                  onClick={handleComplete}
+                  onClick={() => setIsCompleted(true)}
                 >
                   Complete
                 </Button>
@@ -562,7 +614,7 @@ export default function ReviewDisplay() {
         <div className="w-full mt-4 flex justify-end gap-2">
           <Button
             className="px-6 h-9 bg-[#2A2A2A] text-gray-200 border border-[#333333] hover:bg-[#333333]"
-            onClick={handleComplete}
+            onClick={() => setIsCompleted(true)}
           >
             Complete
           </Button>

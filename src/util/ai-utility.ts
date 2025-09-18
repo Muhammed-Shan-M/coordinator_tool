@@ -7,11 +7,11 @@ const GEMINI_API_URL = import.meta.env.VITE_GEMINI_API_URL
 
 
 
-type AiResponse = 
+type AiResponse =
   | { success: true; answer: string }
-  | { success: false; status: number };
+  | { success: false; status: number ,error: string};
 
-export async function askQuestionToAi(question: string, currentFilter: string, language: string):Promise<AiResponse> {
+export async function askQuestionToAi(question: string, link: string, currentFilter: string, language: string): Promise<AiResponse> {
   try {
     let response
 
@@ -31,38 +31,67 @@ export async function askQuestionToAi(question: string, currentFilter: string, l
         }
       )
     } else {
-      response = await axios.post(`${GEMINI_API_URL}?key=${API_KEY}`,
-        {
-          contents: [
-            {
-              parts: [
-                {
-                  text: `Write only the ${language} code related to the following question. Do not provide any explanation, comments, or output. Return only valid, clean ${language} code in response: ${question}`
-                }
-              ],
-            },
-          ],
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
+
+      if (link) {
+        const base64 = await extractImage(link)
+
+        response = await axios.post(
+          `${GEMINI_API_URL}?key=${API_KEY}`,
+          {
+            contents: [
+              {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: base64,
+                    },
+                  },
+                  {
+                    text: "I need a C program that generates the pattern shown in the image. The response should only include the code, without any extra explanation. You may include comments inside the code if needed.",
+                  },
+                ],
+              },
+            ],
+          }
+        );
+
+      } else {
+
+        response = await axios.post(`${GEMINI_API_URL}?key=${API_KEY}`,
+          {
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `Write only the ${language} code related to the following question. Do not provide any explanation, comments, or output. Return only valid, clean ${language} code in response: ${question}`
+                  }
+                ],
+              },
+            ],
           },
-        }
-      );
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
     }
 
 
 
     const answer = response?.data.candidates?.[0]?.content?.parts?.[0]?.text
-    return {success: true, answer}
-  } catch (error : any) {
-    console.error("Theory Answer Error:", error);
-    return {success: false, status:error.response?.status || 500};
+    return { success: true, answer }
+  } catch (error: any) {
+  
+    return { success: false, status: error.response?.status || 500 ,error: error.message};
   }
 }
 
 
- type ExtraQuestionResult =
+type ExtraQuestionResult =
   | { success: true; questions: ExtraQuestion[] }
   | { success: false; status: number; message: string };
 
@@ -91,7 +120,7 @@ export async function getExtraQuestions(week: string): Promise<ExtraQuestionResu
 
     text = cleanResponseText(text);
 
-    // Parse response as JSON
+
     const questions: ExtraQuestion[] = JSON.parse(text);
     return { success: true, questions }
   } catch (error: any) {
@@ -174,38 +203,6 @@ EXAMPLE OF A SINGLE QUESTION OBJECT (for reference - you must produce many simil
 
 Now generate the JSON array of up to 30 questions following all rules above.`;
   }
-
-  //   if (week === "week-2") {
-  //     return `
-  // Generate up to 30 beginner-friendly C array and logic questions.
-
-  // Focus:
-  // - Arrays with loops and basic operations
-  // - Some questions should be "predict the output"
-  // - Include a few tricky but basic array logic questions
-  // - Add some normal conceptual questions
-  // - Do not make them too hard
-  // - Keep language very simple
-
-  // IMPORTANT:
-  // - Always separate text and code into objects.
-  // - Code must use { "type": "code", "language": "c" }.
-  // - Never inline code inside text.
-  // - Return ONLY valid JSON in this format:
-
-  // [
-  //   {
-  //     "id": "1",
-  //     "title": "Array Initialization",
-  //     "content": [
-  //       { "type": "text", "value": "What will the following C program print?" },
-  //       { "type": "code", "language": "c", "value": "int arr[5] = {1,2,3,4,5};\\nfor(int i=0; i<5; i++) {\\n   printf(\\"%d \\", arr[i]);\\n}" }
-  //     ],
-  //     "category": "C"
-  //   }
-  // ]`;
-  //   }
-
   if (week === "week-3") {
     return `
 You are a question generator. Create up to 30 beginner-level Java questions.
@@ -294,4 +291,92 @@ IMPORTANT:
   }
 
   return "Invalid week.";
+}
+
+
+
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        const base64 = reader.result.split(",")[1]; 
+        resolve(base64);
+      } else {
+        reject(new Error("Failed to convert Blob to Base64 string"));
+      }
+    };
+
+    reader.onerror = () => reject(new Error("FileReader failed while converting Blob to Base64"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+
+
+
+function extractImageLinks(html: string): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const images = Array.from(doc.querySelectorAll("img"));
+
+  if (images.length === 0) {
+    throw new Error("No <img> tags found in the provided HTML");
+  }
+
+  const firstImg = images[0].src;
+  if (!firstImg) {
+    throw new Error("Image source URL not found in HTML");
+  }
+
+  return firstImg;
+}
+
+
+
+
+export async function extractImage(url: string): Promise<string> {
+  try {
+    const parsed = new URL(url);
+    const realUrl = parsed.searchParams.get("q");
+    if (!realUrl) {
+      throw new Error("Google Docs URL did not contain a 'q' parameter with the real URL");
+    }
+
+    const urlForExport = realUrl.replace(/\/edit.*$/, "/export?format=html");
+
+    const res = await fetch(urlForExport);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch exported HTML. Status: ${res.status} ${res.statusText}`);
+    }
+
+    const html = await res.text();
+    if (!html) {
+      throw new Error("Fetched HTML from Google Docs export is empty");
+    }
+
+    const imgLink = extractImageLinks(html);
+
+    const imgRes = await fetch(imgLink);
+    if (!imgRes.ok) {
+      throw new Error(`Failed to fetch image from extracted link. Status: ${imgRes.status} ${imgRes.statusText}`);
+    }
+
+    const blob = await imgRes.blob();
+    if (blob.size === 0) {
+      throw new Error("Fetched image Blob is empty");
+    }
+
+    const base64img = await blobToBase64(blob);
+    if (!base64img) {
+      throw new Error("Conversion to Base64 returned an empty string");
+    }
+
+    return base64img;
+  } catch (error: any) {
+    console.error("extractImage error:", error.message || error);
+    throw error; 
+  }
 }

@@ -59,11 +59,11 @@ export default function ExtraQuestions({ isOpen, onClose }: QuestionModalProps) 
 
   const handleToggleAsked = (questionId: string) => {
     setAskedQuestions((prev) => {
-      const newSet = new Set(prev) // clone previous
+      const newSet = new Set(prev) 
       if (newSet.has(questionId)) {
-        newSet.delete(questionId) // remove if exists
+        newSet.delete(questionId) 
       } else {
-        newSet.add(questionId)    // add if not exists
+        newSet.add(questionId)    
       }
       return newSet
     })
