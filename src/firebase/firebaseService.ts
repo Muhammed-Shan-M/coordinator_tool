@@ -105,8 +105,6 @@ function removeDuplicateQuestions( newPreset: FirestorePreset,  existingPresets:
   let theory = newPreset.theoryQuestions
   let practical = newPreset.practicalQuestions
 
-  console.log('from remove duplicates',existingPresets )
-
   for (const preset of existingPresets) {
     if (arraysAreEqual(theory, preset.theoryQuestions)) {
       theory = [] 

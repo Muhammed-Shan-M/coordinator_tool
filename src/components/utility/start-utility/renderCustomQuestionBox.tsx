@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useEffect, useState } from "react"
 
 interface RenderCustomQuestionBoxProps {
   title: string
@@ -34,7 +35,15 @@ export default function RenderCustomQuestionBox({
   week,
 }: RenderCustomQuestionBoxProps) {
 
+  const [customMessage,setCustomMessage] = useState<string>('')
 
+  useEffect(() => {
+    if(activeTab === 'theory' || week === 'week-3' || (week === "week-4" && title === "Java OOPs")){
+      setCustomMessage("Paste your questions here...")
+    }else{
+      setCustomMessage('Paste your questions or share a Google Docs link here...')
+    }
+  },[week,activeTab])
 
   return (
     <div className="bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg">
@@ -62,7 +71,7 @@ export default function RenderCustomQuestionBox({
           Paste Custom {activeTab === "theory" ? "Theory" : "Practical"} Questions
         </Label>
         <Textarea
-          placeholder="Paste your questions here..."
+          placeholder={customMessage}
           className="h-32 bg-[#222222] border-[#333333] text-gray-200 placeholder:text-gray-500 focus:ring-offset-[#1A1A1A] resize-none"
           value={activeTab === "theory" ? theoryValue : practicalValue}
           onChange={(e) => {

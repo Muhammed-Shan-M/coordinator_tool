@@ -174,7 +174,6 @@ export default function ReviewDisplay() {
 
 
   useEffect(() => {
-    console.log();
 
     if (!isCompositeWeek) {
       const normal = reviewState.questions as NormalWeekQuestions

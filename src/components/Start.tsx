@@ -15,6 +15,7 @@ import RenderPredefinedQuestionBox from "./utility/start-utility/renderPredefine
 import RenderCustomQuestionBox from "./utility/start-utility/renderCustomQuestionBox"
 import { addItem, getPresets } from "@/firebase/firebaseService"
 import { toast } from "react-toastify"
+import { BookOpen } from "lucide-react"
 
 
 
@@ -23,8 +24,8 @@ export default function ReviewSetup() {
   const navigate = useNavigate()
 
   const [isGDLink, setIsGDLink] = useState<boolean>(false)
-  const [isGDLinkForCBasic,setIsGDLinkForCBasic] = useState<boolean>(false)
-  const [isGDLinkForCLogic,setIsGDLinkForCLogic] = useState<boolean>(false)
+  const [isGDLinkForCBasic, setIsGDLinkForCBasic] = useState<boolean>(false)
+  const [isGDLinkForCLogic, setIsGDLinkForCLogic] = useState<boolean>(false)
 
   const [loading, setLoading] = useState<boolean>(false)
 
@@ -50,7 +51,7 @@ export default function ReviewSetup() {
 
 
   //presets
-  const [cBasicPatternSets,  setcBasicPatternSets] = useState<Presets>({ practical: [], theory: [] })
+  const [cBasicPatternSets, setcBasicPatternSets] = useState<Presets>({ practical: [], theory: [] })
   const [cLogicalArraySets, setcLogicalArraySets] = useState<Presets>({ practical: [], theory: [] })
   const [javaSets, setjavaSets] = useState<Presets>({ practical: [], theory: [] })
 
@@ -160,7 +161,6 @@ export default function ReviewSetup() {
       setPredefinedTheoryQuestionSets([])
     }
 
-    console.log('from useEffect : ',cBasicPatternSets)
 
   }, [cBasicPatternSets, cLogicalArraySets, javaSets, selectedWeek])
 
@@ -168,10 +168,10 @@ export default function ReviewSetup() {
 
 
 
-  async function isGDLinkQuestion(input: string,isGDLink: boolean, presets: QuestionSet[]) {
-    if(isGDLink){
-      return await fecthDoc(input) 
-    }else{
+  async function isGDLinkQuestion(input: string, isGDLink: boolean, presets: QuestionSet[]) {
+    if (isGDLink) {
+      return await fecthDoc(input)
+    } else {
       return await extractQustions(input, (questionMode !== "custom"), presets)
     }
   }
@@ -200,7 +200,7 @@ export default function ReviewSetup() {
         cBasicTheory: validateQuestions(cBasicTheoryInput, isPresets),
         cBasicPractical: isGDLinkForCBasic ? "" : validateQuestions(cBasicPracticalInput, isPresets),
         cLogicalTheory: validateQuestions(cLogicalTheoryInput, isPresets),
-        cLogicalPractical: isGDLinkForCLogic? "" : validateQuestions(cLogicalPracticalInput, isPresets),
+        cLogicalPractical: isGDLinkForCLogic ? "" : validateQuestions(cLogicalPracticalInput, isPresets),
         javaTheory: validateQuestions(javaTheoryInput, isPresets),
         javaPractical: validateQuestions(javaPracticalInput, isPresets),
       }
@@ -231,35 +231,35 @@ export default function ReviewSetup() {
 
       const questions = {
         week1T: await extractQustions(cBasicTheoryInput, isPresets, cBasicPatternSets.theory),
-        week1P: await isGDLinkQuestion(cBasicPracticalInput,isGDLinkForCBasic,cBasicPatternSets.practical) as FecthDocType | Question[],
+        week1P: await isGDLinkQuestion(cBasicPracticalInput, isGDLinkForCBasic, cBasicPatternSets.practical) as FecthDocType | Question[],
         week2T: await extractQustions(cLogicalTheoryInput, isPresets, cLogicalArraySets.theory),
-        week2P: await isGDLinkQuestion(cLogicalPracticalInput,isGDLinkForCLogic,cLogicalArraySets.practical) as FecthDocType | Question[],
+        week2P: await isGDLinkQuestion(cLogicalPracticalInput, isGDLinkForCLogic, cLogicalArraySets.practical) as FecthDocType | Question[],
         week3T: await extractQustions(javaTheoryInput, isPresets, javaSets.theory),
         week3P: await extractQustions(javaPracticalInput, isPresets, javaSets.practical),
       }
 
-      
-      if(isGDLinkForCBasic && 'error' in questions.week1P){
-        if(questions.week1P.error){
-          setErrors({...errors,cBasicPractical :questions.week1P.error})
+
+      if (isGDLinkForCBasic && 'error' in questions.week1P) {
+        if (questions.week1P.error) {
+          setErrors({ ...errors, cBasicPractical: questions.week1P.error })
           const displayName = fieldNames['cBasicPractical']
           toast.error(`Something wrong in ${displayName}: ${questions.week1P.error}`)
           setLoading(false)
           return
-        }else{          
+        } else {
           questions.week1P = questions.week1P.questions
         }
       }
-      
-      if(isGDLinkForCLogic && 'error' in questions.week2P){
-        if(questions.week2P.error){
-          setErrors({...errors,cLogicalPractical: questions.week2P.error})
+
+      if (isGDLinkForCLogic && 'error' in questions.week2P) {
+        if (questions.week2P.error) {
+          setErrors({ ...errors, cLogicalPractical: questions.week2P.error })
           const displayName = fieldNames['cLogicalPractical']
           toast.error(`Something wrong in ${displayName}: ${questions.week2P.error}`)
           setLoading(false)
           return
-        }else{
-          questions.week2P = questions.week2P.questions 
+        } else {
+          questions.week2P = questions.week2P.questions
         }
       }
 
@@ -283,7 +283,6 @@ export default function ReviewSetup() {
       }
 
 
-      console.log(reviewState)
       dispatch(setReviewState(reviewState))
       navigate("/review")
 
@@ -313,12 +312,12 @@ export default function ReviewSetup() {
       }
 
 
-      const questions:NormalWeekData = {
+      const questions: NormalWeekData = {
         T: await extractQustions(theoryInput, isPresets, predefinedTheoryQuestionSets),
         P: []
       }
 
-      const rawP = await isGDLinkQuestion(practicalInput,isGDLink,predefinedPracticalQuestionSets) as FecthDocType | Question[]
+      const rawP = await isGDLinkQuestion(practicalInput, isGDLink, predefinedPracticalQuestionSets) as FecthDocType | Question[]
 
 
       if (isGDLink && 'error' in rawP) {
@@ -330,11 +329,11 @@ export default function ReviewSetup() {
         } else {
           questions.P = rawP.questions
         }
-      }else {
+      } else {
         questions.P = rawP as Question[]
       }
 
-      questions.P = questions.P as Question[]; 
+      questions.P = questions.P as Question[];
 
       const reviewState: ReviewState = {
         studentName,
@@ -358,229 +357,266 @@ export default function ReviewSetup() {
 
   }
 
-  console.log();
-  
+
   const isStartReviewDisabled = !studentName || !selectedWeek
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto min-h-screen relative p-4">
-      {/* Student Information - Top and Wider */}
-      <div className="w-full bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg mb-6">
-        <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">Student Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="student-name" className="text-gray-200">
-              Enter Student Name
-            </Label>
-            <Input
-              id="student-name"
-              placeholder="John Doe"
-              value={studentName}
-              onChange={(e) => setStudentName(e.target.value)}
-              className="bg-[#222222] border-[#333333] text-gray-200 placeholder:text-gray-500 focus:ring-offset-[#1A1A1A]"
-            />
-          </div>
+    <div className="min-h-screen bg-gray-950 text-gray-50 p-6 md:p-10">
 
-          <div className="space-y-2">
-            <Label htmlFor="week-select" className="text-gray-200">
-              Select Week
-            </Label>
-            <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-              <SelectTrigger id="week-select" className="w-full bg-[#222222] border-[#333333] text-gray-200">
-                <SelectValue placeholder="Select a week" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#222222] border-[#333333] text-gray-200">
-                <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="week-1">
-                  Week 1
-                </SelectItem>
-                <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="week-2">
-                  Week 2
-                </SelectItem>
-                <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="week-3">
-                  Week 3
-                </SelectItem>
-                <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="week-4">
-                  Week 4
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="question-mode" className="text-gray-200">
-              Question Mode
-            </Label>
-            <Select value={questionMode} onValueChange={setQuestionMode}>
-              <SelectTrigger id="question-mode" className="w-full bg-[#222222] border-[#333333] text-gray-200">
-                <SelectValue placeholder="Select question mode" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#222222] border-[#333333] text-gray-200">
-                <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="predefined">
-                  Predefined Questions
-                </SelectItem>
-                <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="custom">
-                  Custom Questions
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          className="bg-[#333333] hover:bg-[#444444] border-[#333333] hover:border-[#444444] text-gray-200 transition-all duration-200"
+          onClick={() => {
+             toast.info("This feature is currently not available.");
+          }}
+        >
+          <BookOpen className="w-4 h-4 mr-2" />
+          Documentation
+        </Button>
       </div>
 
-      {/* Question Selection Section for Weeks 1-3 */}
-      {selectedWeek && selectedWeek !== "week-4" && (
-        <div className="w-full mb-6">
-          {questionMode === "custom" ? (
-            < RenderCustomQuestionBox
-              title={"Select Question"}
-              activeTab={activeCustomTab}
-              setActiveTab={setActiveCustomTab}
-              theoryValue={customTheoryQuestions}
-              setTheoryValue={setCustomTheoryQuestions}
-              practicalValue={customPracticalQuestions}
-              setPracticalValue={setCustomPracticalQuestions}
-              theoryError={theoryError}
-              practicalError={practicalError}
-              setIsGDLink={setIsGDLink}
-              isGDLink={isGDLink}
-              week={selectedWeek}
-            />
+      <div className="flex flex-col items-center justify-center w-full max-w-6xl mx-auto min-h-screen relative p-4">
 
-          ) : (
-            <RenderPredefinedQuestionBox
-              title={'Select Question'}
-              activeTab={activePredefinedTab}
-              setActiveTab={setActivePredefinedTab}
-              theorySets={predefinedTheoryQuestionSets}
-              practicalSets={predefinedPracticalQuestionSets}
-              selectedTheorySet={selectedPredefinedTheorySet}
-              setSelectedTheorySet={setSelectedPredefinedTheorySet}
-              selectedPracticalSet={selectedPredefinedPracticalSet}
-              setSelectedPracticalSet={setSelectedPredefinedPracticalSet}
-              expandedTheorySet={expandedTheorySet}
-              expandedPracticalSet={expandedPracticalSet}
-              toggleSetExpansion={toggleSetExpansion}
-            />
-          )}
+        {/* Student Information - Top and Wider */}
+        <div className="w-full bg-[#222222] border border-[#333333] rounded-lg p-6 shadow-lg mb-6">
+          <h2 className="text-2xl font-bold mb-6 text-gray-100 border-b border-[#333333] pb-4">Student Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="student-name" className="text-gray-200">
+                Enter Student Name
+              </Label>
+              <Input
+                id="student-name"
+                placeholder="John Doe"
+                value={studentName}
+                onChange={(e) => setStudentName(e.target.value)}
+                className="bg-[#222222] border-[#333333] text-gray-200 placeholder:text-gray-500 focus:ring-offset-[#1A1A1A]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="week-select" className="text-gray-200">
+                Select Week
+              </Label>
+              <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                <SelectTrigger id="week-select" className="w-full bg-[#222222] border-[#333333] text-gray-200">
+                  <SelectValue placeholder="Select a week" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#222222] border-[#333333] text-gray-200">
+                  <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="week-1">
+                    Week 1
+                  </SelectItem>
+                  <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="week-2">
+                    Week 2
+                  </SelectItem>
+                  <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="week-3">
+                    Week 3
+                  </SelectItem>
+                  <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="week-4">
+                    Week 4
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="question-mode" className="text-gray-200">
+                Question Mode
+              </Label>
+              <Select value={questionMode} onValueChange={setQuestionMode}>
+                <SelectTrigger id="question-mode" className="w-full bg-[#222222] border-[#333333] text-gray-200">
+                  <SelectValue placeholder="Select question mode" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#222222] border-[#333333] text-gray-200">
+                  <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="predefined">
+                    Predefined Questions
+                  </SelectItem>
+                  <SelectItem className="bg-[#222222] border-[#333333] text-gray-200" value="custom">
+                    Custom Questions
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Week 4 Special Layout */}
-      {selectedWeek === "week-4" && (
-        <div className="space-y-6 w-full mb-6">
-          {questionMode === "custom" ? (
-            <>
-              <RenderCustomQuestionBox
-                title={"C Basic Patterns"}
-                activeTab={activeCBasicTab}
-                setActiveTab={setActiveCBasicTab}
-                theoryValue={customCBasicTheoryQuestions}
-                setTheoryValue={setCustomCBasicTheoryQuestions}
-                practicalValue={customCBasicPracticalQuestions}
-                setPracticalValue={setCustomCBasicPracticalQuestions}
-                theoryError={errors.cBasicTheory}
-                practicalError={errors.cBasicPractical}
-                setIsGDLink={setIsGDLinkForCBasic}
-                isGDLink={isGDLinkForCBasic}
-                week={selectedWeek}
-              />
-
-              <RenderCustomQuestionBox
-                title={"C Logical Array"}
-                activeTab={activeCLogicalTab}
-                setActiveTab={setActiveCLogicalTab}
-                theoryValue={customCLogicalTheoryQuestions}
-                setTheoryValue={setCustomCLogicalTheoryQuestions}
-                practicalValue={customCLogicalPracticalQuestions}
-                setPracticalValue={setCustomCLogicalPracticalQuestions}
-                theoryError={errors.cLogicalTheory}
-                practicalError={errors.cLogicalPractical}
-                setIsGDLink={setIsGDLinkForCLogic}
-                isGDLink={isGDLinkForCLogic}
-                week={selectedWeek}
-              />
-
-
-              <RenderCustomQuestionBox
-                title={"Java OOPs"}
-                activeTab={activeJavaTab}
-                setActiveTab={setActiveJavaTab}
-                theoryValue={customJavaTheoryQuestions}
-                setTheoryValue={setCustomJavaTheoryQuestions}
-                practicalValue={customJavaPracticalQuestions}
-                setPracticalValue={setCustomJavaPracticalQuestions}
-                theoryError={errors.javaTheory}
-                practicalError={errors.javaPractical}
+        {/* Question Selection Section for Weeks 1-3 */}
+        {selectedWeek && selectedWeek !== "week-4" && (
+          <div className="w-full mb-6">
+            {questionMode === "custom" ? (
+              < RenderCustomQuestionBox
+                title={"Select Question"}
+                activeTab={activeCustomTab}
+                setActiveTab={setActiveCustomTab}
+                theoryValue={customTheoryQuestions}
+                setTheoryValue={setCustomTheoryQuestions}
+                practicalValue={customPracticalQuestions}
+                setPracticalValue={setCustomPracticalQuestions}
+                theoryError={theoryError}
+                practicalError={practicalError}
                 setIsGDLink={setIsGDLink}
                 isGDLink={isGDLink}
                 week={selectedWeek}
               />
 
-            </>
-          ) : (
-            <>
+            ) : (
               <RenderPredefinedQuestionBox
-                title={"C Basic Patterns"}
-                activeTab={activeCBasicTab}
-                setActiveTab={setActiveCBasicTab}
-                theorySets={cBasicPatternSets.theory}
-                practicalSets={cBasicPatternSets.practical}
-                selectedTheorySet={selectedCBasicTheorySet}
-                setSelectedTheorySet={setSelectedCBasicTheorySet}
-                selectedPracticalSet={selectedCBasicPracticalSet}
-                setSelectedPracticalSet={setSelectedCBasicPracticalSet}
-                expandedTheorySet={expandedCBasicTheorySet}
-                expandedPracticalSet={expandedCBasicPracticalSet}
+                title={'Select Question'}
+                activeTab={activePredefinedTab}
+                setActiveTab={setActivePredefinedTab}
+                theorySets={predefinedTheoryQuestionSets}
+                practicalSets={predefinedPracticalQuestionSets}
+                selectedTheorySet={selectedPredefinedTheorySet}
+                setSelectedTheorySet={setSelectedPredefinedTheorySet}
+                selectedPracticalSet={selectedPredefinedPracticalSet}
+                setSelectedPracticalSet={setSelectedPredefinedPracticalSet}
+                expandedTheorySet={expandedTheorySet}
+                expandedPracticalSet={expandedPracticalSet}
                 toggleSetExpansion={toggleSetExpansion}
-                category={'c-basic'}
               />
+            )}
+          </div>
+        )}
 
-              <RenderPredefinedQuestionBox
-                title={"C Logical Array"}
-                activeTab={activeCLogicalTab}
-                setActiveTab={setActiveCLogicalTab}
-                theorySets={cLogicalArraySets.theory}
-                practicalSets={cLogicalArraySets.practical}
-                selectedTheorySet={selectedCLogicalTheorySet}
-                setSelectedTheorySet={setSelectedCLogicalTheorySet}
-                selectedPracticalSet={selectedCLogicalPracticalSet}
-                setSelectedPracticalSet={setSelectedCLogicalPracticalSet}
-                expandedTheorySet={expandedCLogicalTheorySet}
-                expandedPracticalSet={expandedCLogicalPracticalSet}
-                toggleSetExpansion={toggleSetExpansion}
-                category={"c-logical"}
-              />
+        {/* Week 4 Special Layout */}
+        {selectedWeek === "week-4" && (
+          <div className="space-y-6 w-full mb-6">
+            {questionMode === "custom" ? (
+              <>
+                <RenderCustomQuestionBox
+                  title={"C Basic Patterns"}
+                  activeTab={activeCBasicTab}
+                  setActiveTab={setActiveCBasicTab}
+                  theoryValue={customCBasicTheoryQuestions}
+                  setTheoryValue={setCustomCBasicTheoryQuestions}
+                  practicalValue={customCBasicPracticalQuestions}
+                  setPracticalValue={setCustomCBasicPracticalQuestions}
+                  theoryError={errors.cBasicTheory}
+                  practicalError={errors.cBasicPractical}
+                  setIsGDLink={setIsGDLinkForCBasic}
+                  isGDLink={isGDLinkForCBasic}
+                  week={selectedWeek}
+                />
 
-              <RenderPredefinedQuestionBox
-                title={"Java OOPs"}
-                activeTab={activeJavaTab}
-                setActiveTab={setActiveJavaTab}
-                theorySets={javaSets.theory}
-                practicalSets={javaSets.practical}
-                selectedTheorySet={selectedJavaTheorySet}
-                setSelectedTheorySet={setSelectedJavaTheorySet}
-                selectedPracticalSet={selectedJavaPracticalSet}
-                setSelectedPracticalSet={setSelectedJavaPracticalSet}
-                expandedTheorySet={expandedJavaTheorySet}
-                expandedPracticalSet={expandedJavaPracticalSet}
-                toggleSetExpansion={toggleSetExpansion}
-                category={"java"}
-              />
-            </>
-          )}
+                <RenderCustomQuestionBox
+                  title={"C Logical Array"}
+                  activeTab={activeCLogicalTab}
+                  setActiveTab={setActiveCLogicalTab}
+                  theoryValue={customCLogicalTheoryQuestions}
+                  setTheoryValue={setCustomCLogicalTheoryQuestions}
+                  practicalValue={customCLogicalPracticalQuestions}
+                  setPracticalValue={setCustomCLogicalPracticalQuestions}
+                  theoryError={errors.cLogicalTheory}
+                  practicalError={errors.cLogicalPractical}
+                  setIsGDLink={setIsGDLinkForCLogic}
+                  isGDLink={isGDLinkForCLogic}
+                  week={selectedWeek}
+                />
+
+
+                <RenderCustomQuestionBox
+                  title={"Java OOPs"}
+                  activeTab={activeJavaTab}
+                  setActiveTab={setActiveJavaTab}
+                  theoryValue={customJavaTheoryQuestions}
+                  setTheoryValue={setCustomJavaTheoryQuestions}
+                  practicalValue={customJavaPracticalQuestions}
+                  setPracticalValue={setCustomJavaPracticalQuestions}
+                  theoryError={errors.javaTheory}
+                  practicalError={errors.javaPractical}
+                  setIsGDLink={setIsGDLink}
+                  isGDLink={isGDLink}
+                  week={selectedWeek}
+                />
+
+              </>
+            ) : (
+              <>
+                <RenderPredefinedQuestionBox
+                  title={"C Basic Patterns"}
+                  activeTab={activeCBasicTab}
+                  setActiveTab={setActiveCBasicTab}
+                  theorySets={cBasicPatternSets.theory}
+                  practicalSets={cBasicPatternSets.practical}
+                  selectedTheorySet={selectedCBasicTheorySet}
+                  setSelectedTheorySet={setSelectedCBasicTheorySet}
+                  selectedPracticalSet={selectedCBasicPracticalSet}
+                  setSelectedPracticalSet={setSelectedCBasicPracticalSet}
+                  expandedTheorySet={expandedCBasicTheorySet}
+                  expandedPracticalSet={expandedCBasicPracticalSet}
+                  toggleSetExpansion={toggleSetExpansion}
+                  category={'c-basic'}
+                />
+
+                <RenderPredefinedQuestionBox
+                  title={"C Logical Array"}
+                  activeTab={activeCLogicalTab}
+                  setActiveTab={setActiveCLogicalTab}
+                  theorySets={cLogicalArraySets.theory}
+                  practicalSets={cLogicalArraySets.practical}
+                  selectedTheorySet={selectedCLogicalTheorySet}
+                  setSelectedTheorySet={setSelectedCLogicalTheorySet}
+                  selectedPracticalSet={selectedCLogicalPracticalSet}
+                  setSelectedPracticalSet={setSelectedCLogicalPracticalSet}
+                  expandedTheorySet={expandedCLogicalTheorySet}
+                  expandedPracticalSet={expandedCLogicalPracticalSet}
+                  toggleSetExpansion={toggleSetExpansion}
+                  category={"c-logical"}
+                />
+
+                <RenderPredefinedQuestionBox
+                  title={"Java OOPs"}
+                  activeTab={activeJavaTab}
+                  setActiveTab={setActiveJavaTab}
+                  theorySets={javaSets.theory}
+                  practicalSets={javaSets.practical}
+                  selectedTheorySet={selectedJavaTheorySet}
+                  setSelectedTheorySet={setSelectedJavaTheorySet}
+                  selectedPracticalSet={selectedJavaPracticalSet}
+                  setSelectedPracticalSet={setSelectedJavaPracticalSet}
+                  expandedTheorySet={expandedJavaTheorySet}
+                  expandedPracticalSet={expandedJavaPracticalSet}
+                  toggleSetExpansion={toggleSetExpansion}
+                  category={"java"}
+                />
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Start Review Button */}
+        <div className="w-full flex justify-end">
+          <Button
+            onClick={handleStartReview}
+            className="px-8 py-3 bg-[#333333] hover:bg-[#444444] text-gray-200 font-semibold rounded-md shadow-md transition-colors duration-200"
+            disabled={isStartReviewDisabled}
+          >
+            {loading ? 'LOADING...' : "START REVIEW"}
+          </Button>
         </div>
-      )}
 
-      {/* Start Review Button */}
-      <div className="w-full flex justify-end">
-        <Button
-          onClick={handleStartReview}
-          className="px-8 py-3 bg-[#333333] hover:bg-[#444444] text-gray-200 font-semibold rounded-md shadow-md transition-colors duration-200"
-          disabled={isStartReviewDisabled}
-        >
-          {loading ? 'LOADING...' : "START REVIEW"}
-        </Button>
       </div>
+
+       <footer className="fixed bottom-0 left-0 right-0 z-10">
+        <div className="text-center py-2 bg-gray-950/90 backdrop-blur-sm">
+          <p className="text-sm text-gray-400">
+            created by{" "}
+            <a
+              href={import.meta.env.VITE_LINKED_IN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative font-medium text-gray-200 hover:text-gray-100 transition-colors duration-200 group/name"
+            >
+              <span className="relative z-10">Muhammed Shan M</span>
+              {/* Underline animation */}
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gray-100 group-hover/name:w-full transition-all duration-300 ease-out" />
+            </a>
+          </p>
+        </div>
+      </footer>
+      
     </div>
   )
 }

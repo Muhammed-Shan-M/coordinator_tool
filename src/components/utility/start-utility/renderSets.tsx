@@ -28,7 +28,6 @@ export default function RenderSets({
 
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 
-  console.log(sets, selectedSet, expandedSet)
   return (
     <div className="max-h-96 overflow-y-auto space-y-4">
       {sets.length > 0 ? (

@@ -8,7 +8,6 @@ import { CommenPayload, Question, ReviewState, SetAnsweredPayload, CompilationWe
 export async function extractQustions(input: string, isPresets: boolean, allQustions: QuestionSet[]):Promise<Question[]> {
 
   if (isPresets) {
-    console.log(allQustions,input)
     const questions = allQustions.find((item) => item.id === input)?.questions.map((item, ind) => ({ id: ind + 1, text: item.text, href:item.href })) ?? []
     return questions
   }
@@ -253,7 +252,6 @@ export function findMarks(reviewState: ReviewState, isWeek4: boolean): Week4Mark
     const practical = findAnsweredQuestions(isWeek4, reviewState, "" as WeekName, "practical")
     const theory = findAnsweredQuestions(isWeek4, reviewState, "" as WeekName, "theory")
 
-    console.log('practical : ',practical,' theory : ',theory)
 
     const marks: NormalWeekMarks = {
       P: findTotalMark(practical.questions, practical.totalQuestions).toString(),
@@ -334,14 +332,12 @@ export const fecthDoc = async (docLink: string): Promise<FecthDocType> => {
 
     const html = await res.text()
 
-    console.log(html)
     return {
       questions: extractTextAndLinks(html),
       error: null
     }
 
   } catch (error: any) {
-    console.log('from fetch google doc : ', error.message)
     return {
       questions: [],
       error: error.message
