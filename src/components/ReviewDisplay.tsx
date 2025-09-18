@@ -209,6 +209,8 @@ export default function ReviewDisplay() {
     const compilation = reviewState.questions as CompilationWeekQuestions
     setCurrentQuestions(compilation[week][currentFilter])
   }
+
+  
   const handleComplete = () => {
     // if (!isCompositeWeek) return
     setIsCompleted(true)

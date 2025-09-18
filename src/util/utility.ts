@@ -129,26 +129,7 @@ export const validateQuestions = (text: string, isPresets: boolean) => {
 };
 
 
-export const findTotalMark = (questions: Question[], totalQuestion: number) => {
 
-  const halfThreShould = Math.ceil(totalQuestion / 2)
-  const answerdCount = questions.length
-
-
-  if (answerdCount === 0) return 0
-
-  const avgStar = questions.reduce((sum, q) => sum + (q.performance ? q.performance : 0), 0) / answerdCount
-
-  const perfFraction = (avgStar - 1) / 2
-
-  const bonus = perfFraction * 5 * (answerdCount / totalQuestion)
-
-
-  let finalMark = parseInt((answerdCount >= halfThreShould ? 5 + bonus : bonus).toFixed(2))
-
-  return Math.min(finalMark, 10)
-
-}
 
 
 export const findTotalRating = (mark: number) => {
@@ -234,6 +215,30 @@ export function getWeek4ClipboardText(
 
 
 
+export const findTotalMark = (questions: Question[], totalQuestion: number) => {
+
+  const halfThreShould = Math.ceil(totalQuestion / 2)
+  const answerdCount = questions.length
+
+
+  if (answerdCount === 0) return 0
+
+  const avgStar = questions.reduce((sum, q) => sum + (q.performance ? q.performance : 0), 0) / answerdCount
+
+  const perfFraction = (avgStar - 1) / 2
+
+  const bonus = perfFraction * 5 * (answerdCount / totalQuestion)
+
+
+  let finalMark = parseInt((answerdCount >= halfThreShould ? 5 + bonus : bonus).toFixed(2))
+
+  return Math.min(finalMark, 10)
+
+}
+
+
+
+
 export function findMarks(reviewState: ReviewState, isWeek4: boolean): Week4Marks | NormalWeekMarks {
   if (isWeek4) {
     const weeks: WeekName[] = ["week-1", "week-2", "week-3"]
@@ -254,6 +259,8 @@ export function findMarks(reviewState: ReviewState, isWeek4: boolean): Week4Mark
     const practical = findAnsweredQuestions(isWeek4, reviewState, "" as WeekName, "practical")
     const theory = findAnsweredQuestions(isWeek4, reviewState, "" as WeekName, "theory")
 
+    console.log('practical : ',practical,' theory : ',theory)
+
     const marks: NormalWeekMarks = {
       P: findTotalMark(practical.questions, practical.totalQuestions).toString(),
       T: findTotalMark(theory.questions, theory.totalQuestions).toString(),
@@ -269,15 +276,18 @@ export function findMarks(reviewState: ReviewState, isWeek4: boolean): Week4Mark
 export function findAnsweredQuestions(isWeek4: boolean, reviewState: ReviewState, selectedSegment: WeekName | '', questionType: "theory" | "practical") {
   if (isWeek4) {
     const compilationWeek = reviewState.questions as CompilationWeekQuestions
+
+    const questions = compilationWeek[selectedSegment][questionType].filter((q) => q.answered)
     return {
-      questions: compilationWeek[selectedSegment][questionType].filter((q) => q.answered),
-      totalQuestions: compilationWeek[selectedSegment][questionType].length
+      questions: questions,
+      totalQuestions: questions.length + compilationWeek[selectedSegment][questionType].filter((q) => q.notanswered).length
     }
   } else {
     const normalWeek = reviewState.questions[questionType] as Question[]
+    const questions = normalWeek.filter((q) => q.answered)
     return {
-      questions: normalWeek.filter((q) => q.answered),
-      totalQuestions: normalWeek.length
+      questions: questions,
+      totalQuestions: questions.length + normalWeek.filter((q) => q.notanswered).length
     }
   }
 }
