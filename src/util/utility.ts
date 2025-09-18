@@ -41,28 +41,28 @@ export function extractTextAndLinks(htmlContent: string): Question[] {
 
   let ind = 0;
   const results = Array.from(doc.querySelectorAll("p"))
-    .map((p) => {
-      const link = p.querySelector("a");
-      if (link) {
+  .map((p) => {
+    const link = p.querySelector("a");
 
+    if (link && link.textContent) {
+      return {
+        id: ++ind,
+        text: link.textContent.trim(),
+        href: link.href,
+      };
+    } else if (p.textContent) {
+      const match = p.textContent.trim().match(/^\d+\.\s*(.*)/);
+      if (match && match[1]) {
         return {
           id: ++ind,
-          text: link?.textContent.trim(),
-          href: link?.href,
+          text: match[1].trim(),
         };
-      } else {
-
-        const match = p?.textContent.trim().match(/^\d+\.\s*(.*)/);
-        if (match && match[1]) {
-          return {
-            id: ++ind,
-            text: match[1].trim(),
-          };
-        }
       }
-      return null;
-    })
-    .filter(Boolean); 
+    }
+
+    return null;
+  })
+  .filter(Boolean);
 
   return results as Question[];
 }
