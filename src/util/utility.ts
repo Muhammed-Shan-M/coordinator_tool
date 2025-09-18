@@ -47,12 +47,12 @@ export function extractTextAndLinks(htmlContent: string): Question[] {
 
         return {
           id: ++ind,
-          text: link.textContent.trim(),
-          href: link.href,
+          text: link?.textContent.trim(),
+          href: link?.href,
         };
       } else {
 
-        const match = p.textContent.trim().match(/^\d+\.\s*(.*)/);
+        const match = p?.textContent.trim().match(/^\d+\.\s*(.*)/);
         if (match && match[1]) {
           return {
             id: ++ind,
