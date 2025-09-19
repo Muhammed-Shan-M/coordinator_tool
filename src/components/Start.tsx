@@ -361,8 +361,7 @@ export default function ReviewSetup() {
   const isStartReviewDisabled = !studentName || !selectedWeek
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-50 p-6 md:p-10">
-
+    <>
       <div className="fixed top-4 right-4 z-50">
         <Button
           variant="outline"
@@ -617,6 +616,6 @@ export default function ReviewSetup() {
         </div>
       </footer>
       
-    </div>
+    </>
   )
 }
